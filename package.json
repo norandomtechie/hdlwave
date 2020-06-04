@@ -1,0 +1,18 @@
+{
+  "name": "hdl2wave",
+  "version": "0.0.1",
+  "description": "Accepts a Verilog/SystemVerilog code/testbench pair, simulates it with Verilator, and outputs the results as a waveform.",
+  "main": "index.js",
+  "scripts": {
+    "main": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "geoip-lite": "^1.4.2",
+    "rimraf": "^3.0.2",
+    "sanitize": "^2.1.0"
+  }
+}

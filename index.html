@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // for some reason, on production, does not parse URLs correctly but it works just fine on localhost for some reason
+        var base = document.createElement ("base")
+        base.href = window.location.href.slice (window.location.href.length - 1) == "/" ? window.location.href : window.location.href + "/"
+        document.getElementsByTagName ("head")[0].appendChild (base)
+    </script>
+    <!-- <base href="/hdlwave"> -->
+    <title>HDLwave</title>
+    <link rel="stylesheet" href="assets/index.css">
+</head>
+<body>
+    <header><p style="font-size: calc(0.75vw + 1vh)">HDLwave<sub style="font-size: calc(0.35vw + 1vh)">&nbsp;beta</sub></p></header>
+    <div id="settingheader">
+        <div style="height: 100%; width: 100%; display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
+            <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+                <p style="font-size: calc(0.25vw + 1vh); margin: 0 0 0 calc(0.5vw)">Version 0.1.0</p>
+                <p style="font-size: calc(0.25vw + 1vh); margin: 0 0 0 calc(0.5vw)">This is Niraj's mess!</p>
+            </div>
+            <div>
+                <div id="dropdown">
+                    <button class="btn" id="dropbtn">Settings</button>
+                    <div id="dropcontent">
+                        <div class="item">
+                            <p style="margin: 0 0 0 calc(0.5vw)">Dark Mode</p>
+                            <label class="switch">
+                                <input id="darkmode" checked type="checkbox"></input>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <!-- <div class="item">
+                            <p style="margin: 0 0 0 calc(0.5vw)">Show waveform</p>
+                            <label class="switch">
+                                <input id="waveview" type="checkbox"></input>
+                                <span class="slider"></span>
+                            </label>
+                        </div> -->
+                        <div class="item">
+                            <p style="margin: 0 0 0 calc(0.5vw)">Select testbench</p>
+                            <div id="testlist">
+                                <div class="subbtn" id="droptest">Select...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn" id="btn_simulate">Simulate</button>
+                <button class="btn" onclick="window.location.href = '/user/logout'" id="btn_logout">Log Out</button>
+            </div>
+        </div>
+    </div>
+    <div style="width: 100%; height: 95%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
+        <div id="codebase">
+            <div id="codeview"></div>
+        </div>
+        <div id="resizer" onmousedown="resizeHandler(event)" onmousemove="resizeHandler(event)" onmouseup="resizeHandler(event)"></div>
+        <div id="waveviewer">
+            <div id="wavesettings">
+                <p class="action" onclick="expandAll()" id="action_expand_all">Expand all</p>
+                <p class="action" onclick="collapseAll()" id="action_collapse_all">Collapse all</p>
+                <div style="display: flex; flex-direction: row; align-items: center; justify-content: center;">
+                    <p class="action" onclick="zoomOut(event)" style="margin: 0 0.25vw 0 0.8vw" id="action_zoom_out">-</p>
+                    <p style="margin: 0 0.25vw 0 0.25vw; font-size: calc(0.2vw + 1vh);" id="zoom_level">100%</p>
+                    <p class="action" onclick="zoomIn(event)" style="margin: 0 0.8vw 0 0.25vw" id="action_zoom_in">+</p>
+                </div>
+            </div>
+            <div id="waveforms"></div>
+            <div style="width: 100%; margin-top: 1vh;"></div>
+            <p id="waveidle">No waveform has been generated yet.</p>
+        </div>
+    </div>
+    <div id="overlay"></div>
+</body>
+<script src="assets/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="assets/index.js"></script>
+</html>
