@@ -11,7 +11,9 @@
     </script>
     <!-- <base href="/hdlwave"> -->
     <title>HDLwave</title>
+    <link rel="stylesheet" href="assets/fontawesome/css/all.css">
     <link rel="stylesheet" href="assets/index.css">
+    <script src="assets/fontawesome/js/all.js"></script>
 </head>
 <body>
     <header><p style="font-size: calc(0.75vw + 1vh)">HDLwave<sub style="font-size: calc(0.35vw + 1vh)">&nbsp;beta</sub></p></header>
@@ -49,14 +51,19 @@
                 </div>
                 <button class="btn" id="btn_simulate">Simulate</button>
                 <button class="btn" onclick="window.location.href = '/user/logout'" id="btn_logout">Log Out</button>
+                <script>
+                    // look, there's no point going to /user/logout on localhost or my personal site - they do nothing!
+                    // just hide the button if not running from verilog.ecn
+                    if (!window.location.href.startsWith ('https://verilog.ecn.purdue.edu'))
+                        document.getElementById ("btn_logout").style.display = 'none'
+                </script>
             </div>
         </div>
     </div>
-    <div style="width: 100%; height: 95%; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
+    <div style="width: 100%; height: 90vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
         <div id="codebase">
             <div id="codeview"></div>
         </div>
-        <div id="resizer" onmousedown="resizeHandler(event)" onmousemove="resizeHandler(event)" onmouseup="resizeHandler(event)"></div>
         <div id="waveviewer">
             <div id="wavesettings">
                 <p class="action" onclick="expandAll()" id="action_expand_all">Expand all</p>
@@ -66,14 +73,32 @@
                     <p style="margin: 0 0.25vw 0 0.25vw; font-size: calc(0.2vw + 1vh);" id="zoom_level">100%</p>
                     <p class="action" onclick="zoomIn(event)" style="margin: 0 0.8vw 0 0.25vw" id="action_zoom_in">+</p>
                 </div>
+                <button class="sigbtn action" onclick="toggleSignalPanel()" id="signallistbtn" style="height: auto; opacity: 1">Show/hide signals</button>
             </div>
             <div id="waveforms"></div>
             <div style="width: 100%; margin-top: 1vh;"></div>
             <p id="waveidle">No waveform has been generated yet.</p>
         </div>
     </div>
-    <div id="overlay"></div>
+    <div class="overlay" id="overlay"></div>
+    <div class="overlay" id="divSignalList">
+        <div id="panelSignalList">
+            <div style="width: 100%; display: flex; justify-content: flex-end;">
+                <i class="fa fa-window-close" style="color: var(--text-color)" onclick="toggleSignalPanel()" aria-hidden="true"></i>
+            </div>
+            <h1>Signal view</h1>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; width: 100%">
+                <p style="font-size: calc(0.35vw + 1vh)">Click on a signal to show/hide it on the waveform.  You can also show or hide all signals at once.</p>
+                <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-evenly; width: 100%">
+                    <p onclick="showSignal(signals)" style="cursor: pointer">Show all signals</p>
+                    <p onclick="hideSignal(signals)" style="cursor: pointer">Hide all signals</p>
+                </div>
+            </div>
+            <div id="signalList"></div>
+        </div>
+    </div>
 </body>
 <script src="assets/ace/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="assets/split.min.js"></script>
 <script src="assets/index.js"></script>
 </html>
