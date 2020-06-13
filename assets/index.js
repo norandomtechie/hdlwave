@@ -89,6 +89,16 @@ fetch ((window.location.pathname + "/tests").replace (/\/\//g, '/')).then (val =
         elm.addEventListener ("mouseleave", testsInactive)
         document.getElementById ("testlist").appendChild (elm)
     })
+    var elm = document.createElement('button')
+    elm.classList.add ('subbtn')
+    elm.innerHTML = "New..."
+    elm.value = "new"
+    elm.addEventListener ("click", (e) => {
+        writeNewWaveform()
+        settingsInactive()
+    })
+    elm.addEventListener ("mouseleave", testsInactive)
+    document.getElementById ("testlist").appendChild (elm)
 })
 
 document.body.addEventListener ('keydown', (e) => {
@@ -194,6 +204,43 @@ function horizontalResizeMouse (e) {
             zoomOut ()
         e.preventDefault()
     }
+}
+
+function writeNewWaveform() {
+    signals = ['hz100', 'pb', 'reset', 'txready', 'rxdata', 'rxready']
+    multisignals = { 'pb': 21, 'rxdata': 8 }
+    window.wave = {
+        'date': new Date().toString(),
+        'events': {
+            '1': { 'hz100': '1', 'pb': '000000000000000000000', 'reset': '0', 'txready': '0', 'rxdata': '00100111', 'rxready': '0' },
+            '2': { 'hz100': '0' },
+            '3': { 'hz100': '1' },
+            '4': { 'hz100': '0' },
+            '5': { 'hz100': '1' },
+            '6': { 'hz100': '0' },
+            '7': { 'hz100': '1' },
+            '8': { 'hz100': '0' },
+            '9': { 'hz100': '1' },
+            '10': { 'hz100': '0' }
+        },
+        'signal_map': {
+            '0': 'hz100',
+            '1': 'pb',
+            '2': 'reset',
+            '3': 'txready',
+            '4': 'rxdata',
+            '5': 'rxready'
+        },
+        'timescale': '1ps',
+        'version': 'No version.  Manually generated.'
+    }
+    document.getElementById ("waveidle").style.opacity = '0'
+    setTimeout (() => {
+        document.getElementById ("waveidle").style.display = 'none'
+        Array.from (document.getElementById ("signalList").children).forEach (e => e.remove())
+        initWaveform()
+        drawWaveform(window.wave)
+    }, 300)
 }
 
 function createWaveform (vcd) {
