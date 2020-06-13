@@ -117,8 +117,11 @@ document.getElementById ("btn_simulate").addEventListener ("click", () => {
             document.getElementById ("waveforms").style.display = 'flex'
         }
         else {
-            console.log (data)
-            alert ("Error occurred: " + data.reason)
+            console.log (data.reason)
+            if ('stderr' in data.reason)
+                alert ("Error occurred: \n" + data.reason.stderr)
+            else
+                alert ("Error occurred: \n" + data.reason)
         }
     })
 })
@@ -261,75 +264,46 @@ function collapseAll() {
     });
 }
 
+function manipulateSignal (signal, display) {
+    console.log (signal)
+    if (!signal.includes ("_"))
+        document.getElementById (signal).style.display = display
+    if (signal in multisignals) {
+        for (var i = parseInt (multisignals [signal]) - 1; i > 0; i--) {
+            Object.keys (window.wave.events).map (e => (signal + "_" + i.toString() + "_" + e)).forEach (div_id => {
+                document.getElementById (div_id).style.display = display
+            })
+        }
+        Object.keys (window.wave.events).map (e => (signal + "_" + e)).forEach (div_id => {
+            document.getElementById (div_id).style.display = display
+        })
+    }
+    else {
+        Object.keys (window.wave.events).map (e => (signal + "_" + e)).forEach (div_id => {
+            document.getElementById (div_id).style.display = display
+        })
+    }
+}
+
 function hideSignal (signal) {
     if (typeof signal == "object") {
         signal.forEach (sig => {
-            document.getElementById (sig).style.display = "none"
-            if (sig in multisignals) {
-                for (var i = parseInt (multisignals [sig]) - 1; i > 0; i--) {
-                    Object.keys (window.wave.events).map (e => (sig + "_" + i.toString() + "_" + e)).forEach (div_id => {
-                        document.getElementById (div_id).style.display = "none"
-                    })
-                }
-            }
-            else {
-                Object.keys (window.wave.events).map (e => (sig + "_" + e)).forEach (div_id => {
-                    document.getElementById (div_id).style.display = "none"
-                })
-            }
+            manipulateSignal (sig, 'none')
         })
     }
     else if (typeof signal == "string") {
-        if (!signal.includes ("_"))
-            document.getElementById (signal).style.display = "none"
-        if (signal in multisignals) {
-            for (var i = parseInt (multisignals [signal]) - 1; i > 0; i--) {
-                Object.keys (window.wave.events).map (e => (signal + "_" + i.toString() + "_" + e)).forEach (div_id => {
-                    document.getElementById (div_id).style.display = "none"
-                })
-            }
-        }
-        else {
-            Object.keys (window.wave.events).map (e => (signal + "_" + e)).forEach (div_id => {
-                document.getElementById (div_id).style.display = "none"
-            })
-        }
+        manipulateSignal (signal, 'none')
     }
 }
 
 function showSignal (signal) {  
     if (typeof signal == "object") {
         signal.forEach (sig => {
-            document.getElementById (sig).style.display = ""
-            if (sig in multisignals) {
-                for (var i = parseInt (multisignals [sig]) - 1; i > 0; i--) {
-                    Object.keys (window.wave.events).map (e => (sig + "_" + i.toString() + "_" + e)).forEach (div_id => {
-                        document.getElementById (div_id).style.display = ""
-                    })
-                }
-            }
-            else {
-                Object.keys (window.wave.events).map (e => (sig + "_" + e)).forEach (div_id => {
-                    document.getElementById (div_id).style.display = ""
-                })
-            }
+            manipulateSignal (sig, '')
         })
     }
     else if (typeof signal == "string") {
-        if (!signal.includes ("_"))
-            document.getElementById (signal).style.display = ""
-        if (signal in multisignals) {
-            for (var i = parseInt (multisignals [signal]) - 1; i > 0; i--) {
-                Object.keys (window.wave.events).map (e => (signal + "_" + i.toString() + "_" + e)).forEach (div_id => {
-                    document.getElementById (div_id).style.display = ""
-                })
-            }
-        }
-        else {
-            Object.keys (window.wave.events).map (e => (signal + "_" + e)).forEach (div_id => {
-                document.getElementById (div_id).style.display = ""
-            })
-        }
+        manipulateSignal (signal, '')
     }
 }
 
@@ -424,6 +398,7 @@ function drawWaveform (wave) {
             if (time == "1") {
                 var sigdiv = document.createElement ("div")
                 sigdiv.classList.add ('signalPick')
+                sigdiv.id = 'toggle_' + sig
                 sigdiv.addEventListener ('click', toggleSignal)
                 var sigdivbox = document.createElement ("div")
                 sigdivbox.classList.add ('signalPickBox')
@@ -481,6 +456,7 @@ function drawWaveform (wave) {
                 if (time == "1") {
                     var sigdiv = document.createElement ("div")
                     sigdiv.classList.add ('signalPick')
+                    sigdiv.id = 'toggle_' + signal.replace (/\[[0-9]+\:0\]/, '').replace (/ /g, '') + '[' + i.toString() + ']'
                     sigdiv.addEventListener ('click', toggleSignal)
                     var sigdivbox = document.createElement ("div")
                     sigdivbox.classList.add ('signalPickBox')
@@ -511,10 +487,8 @@ function drawWaveform (wave) {
 function initWaveform() {
     var waveforms = document.getElementById ("waveforms")
     var waveviewer = document.getElementById ("waveviewer")
-    if (waveforms.style ['justify-content'] == 'flex-start') { // already drawn, remove old waveforms and return
-        Array.from (document.getElementsByClassName ("signaldiv")).slice (1).forEach (evt => evt.remove())
-        return 
-    }
+    if (waveforms.style ['justify-content'] == 'flex-start') // already drawn, remove old waveforms
+        Array.from (document.getElementsByClassName ("signaldiv")).forEach (evt => evt.remove())
     window.wave_width = "5vw"
     
     document.getElementById ("wavesettings").style.display = 'flex'

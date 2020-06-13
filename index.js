@@ -111,22 +111,14 @@ app.post ('/simulate', (req, res) => {
             // verilate
             try {
                 test = req.body.test.match ("[a-z0-9_]+")[0]
-                console.log ("Verilating...")
                 out = cp.execSync ('verilator --build --cc --exe --top-module tb_top --trace ' + __dirname + '/tb_top.v code.v ' + __dirname + 
                                    '/tests/tb_' + test + '.cpp',
                                    {cwd: '/tmp/' + uuid})
             }
             catch (err) {
-                if (out.toString().includes ("%Error")) {
-                    rmRecursiveForce ('/tmp/' + uuid)
-                    res.send ({'status': 'failure', 'reason': out.toString()})
-                    return
-                }
-                else {
-                    rmRecursiveForce ('/tmp/' + uuid)
-                    res.send ({'status': 'failure', 'reason': err.toString()})
-                    return
-                }
+                rmRecursiveForce ('/tmp/' + uuid)
+                res.json ({'status': 'failure', 'reason': {'stderr': err.toString().split ("\n").slice (1).join ('\n')}})
+                return
             }
             // execute
             try {
@@ -135,7 +127,7 @@ app.post ('/simulate', (req, res) => {
             }
             catch (err) {
                 rmRecursiveForce ('/tmp/' + uuid)
-                res.send ({'status': 'failure', 'reason': err.toString()})
+                res.json ({'status': 'failure', 'reason': {'stderr': err.toString().split ("\n").slice (1).join ('\n')}})
                 return
             }
             
@@ -145,11 +137,11 @@ app.post ('/simulate', (req, res) => {
                 // missing?
                 rmRecursiveForce ('/tmp/' + uuid)
                 if (err) {
-                    res.send ({'status': 'failure', 'reason': "No top.vcd file was found."})
+                    res.json ({'status': 'failure', 'reason': "No top.vcd file was found."})
                 }
                 // else send contents of vcd
                 else {
-                    res.send ({'status': 'success', 'vcd': stdout})
+                    res.json ({'status': 'success', 'vcd': stdout})
                 }
             })
         }
