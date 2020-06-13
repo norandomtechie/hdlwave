@@ -1,3 +1,5 @@
+const SVG_DEF = '<svg enable-background="new 0 0 515.556 515.556" viewBox="0 0 515.556 515.556" xmlns="http://www.w3.org/2000/svg"><path class="signalCheck" d="m0 274.226 176.549 176.886 339.007-338.672-48.67-47.997-290.337 290-128.553-128.552z"/></svg>'
+
 var split = Split(['#codebase', '#waveviewer'], {
     sizes: [50, 50],
     direction: 'vertical',
@@ -265,8 +267,8 @@ function collapseAll() {
 }
 
 function manipulateSignal (signal, display) {
-    console.log (signal)
-    if (!signal.includes ("_"))
+    // before changing the signal name, ensure that it is a top-level signal and not a bit of that signal
+    if (!signal.includes ("_") || signals.includes (signal))
         document.getElementById (signal).style.display = display
     if (signal in multisignals) {
         for (var i = parseInt (multisignals [signal]) - 1; i > 0; i--) {
@@ -282,6 +284,13 @@ function manipulateSignal (signal, display) {
         Object.keys (window.wave.events).map (e => (signal + "_" + e)).forEach (div_id => {
             document.getElementById (div_id).style.display = display
         })
+    }
+    if (display == '') {
+        // Icons made by <a href="https://www.flaticon.com/authors/those-icons" title="Those Icons">Those Icons</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a>
+        document.querySelector ("#toggle_" + signal + " div").innerHTML = SVG_DEF
+    }
+    else {
+        document.querySelector ("#toggle_" + signal + " div").innerHTML = ''
     }
 }
 
@@ -402,6 +411,7 @@ function drawWaveform (wave) {
                 sigdiv.addEventListener ('click', toggleSignal)
                 var sigdivbox = document.createElement ("div")
                 sigdivbox.classList.add ('signalPickBox')
+                sigdivbox.innerHTML = SVG_DEF
                 var sig_p = document.createElement ("p")
                 sig_p.innerHTML = sig
                 sig_p.style ['font-size'] = 'calc(0.65vw + 0.35vh)'
@@ -456,10 +466,11 @@ function drawWaveform (wave) {
                 if (time == "1") {
                     var sigdiv = document.createElement ("div")
                     sigdiv.classList.add ('signalPick')
-                    sigdiv.id = 'toggle_' + signal.replace (/\[[0-9]+\:0\]/, '').replace (/ /g, '') + '[' + i.toString() + ']'
+                    sigdiv.id = 'toggle_' + signal + '_' + i.toString()
                     sigdiv.addEventListener ('click', toggleSignal)
                     var sigdivbox = document.createElement ("div")
                     sigdivbox.classList.add ('signalPickBox')
+                    sigdivbox.innerHTML = SVG_DEF
                     var sig_p = document.createElement ("p")
                     sig_p.innerHTML = signal.replace (/\[[0-9]+\:0\]/, '').replace (/ /g, '') + '[' + i.toString() + ']'
                     sig_p.style ['font-size'] = 'calc(0.65vw + 0.35vh)'
