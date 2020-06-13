@@ -323,6 +323,7 @@ function toggleSignalPanel () {
 }
 
 function toggleSignal (evt) {
+    console.log (evt.target)
     if (evt.target.children[1].innerHTML in multisignals) {
         if (document.getElementById (evt.target.children[1].innerHTML).style.display == 'none') {
             // show all multisignals!
@@ -489,18 +490,17 @@ function drawWaveform (wave) {
         })
     })
 
-    document.querySelectorAll (".signalPick").forEach (e => e.addEventListener ('mousedown', (evt) => {
-        window.multiSignalToggle = true
-        toggleSignal (evt)
-    }))
+    document.querySelectorAll (".signalPick").forEach (e => e.onmousedown = (evt) => {
+        window.multiSignalToggle = true; toggleSignal (evt)
+    })
     
-    document.querySelectorAll (".signalPick").forEach (e => e.addEventListener ('mouseenter', (evt) => {
+    document.querySelectorAll (".signalPick").forEach (e => e.onmouseenter = (evt) => {
         if (window.multiSignalToggle) toggleSignal (evt)
-    }))
+    })
     
-    document.querySelectorAll (".signalPick").forEach (e => e.addEventListener ('mouseup', (evt) => {
+    document.querySelectorAll (".signalPick").forEach (e => e.onmouseup = (evt) => {
         window.multiSignalToggle = false
-    }))
+    })
 
     // set border-right transition if XOR of two time events is 1
     for (var j = 0; j < document.querySelectorAll (".signaldiv")[1].querySelectorAll (".port,.signal").length; j++) {
