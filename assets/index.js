@@ -276,15 +276,10 @@ function manipulateSignal (signal, display) {
                 document.getElementById (div_id).style.display = display
             })
         }
-        Object.keys (window.wave.events).map (e => (signal + "_" + e)).forEach (div_id => {
-            document.getElementById (div_id).style.display = display
-        })
     }
-    else {
-        Object.keys (window.wave.events).map (e => (signal + "_" + e)).forEach (div_id => {
-            document.getElementById (div_id).style.display = display
-        })
-    }
+    Object.keys (window.wave.events).map (e => (signal + "_" + e)).forEach (div_id => {
+        document.getElementById (div_id).style.display = display
+    })
     if (display == '') {
         // Icons made by <a href="https://www.flaticon.com/authors/those-icons" title="Those Icons">Those Icons</a> from <a href="https://www.flaticon.com/" title="Flaticon"> www.flaticon.com</a>
         document.querySelector ("#toggle_" + signal + " div").innerHTML = SVG_DEF
@@ -408,11 +403,16 @@ function drawWaveform (wave) {
                 var sigdiv = document.createElement ("div")
                 sigdiv.classList.add ('signalPick')
                 sigdiv.id = 'toggle_' + sig
-                sigdiv.addEventListener ('click', toggleSignal)
                 var sigdivbox = document.createElement ("div")
                 sigdivbox.classList.add ('signalPickBox')
                 sigdivbox.innerHTML = SVG_DEF
                 var sig_p = document.createElement ("p")
+                sig_p.style ['-webkit-touch-callout'] = 'none';
+                sig_p.style ['-webkit-user-select'] = 'none';
+                sig_p.style ['-khtml-user-select'] = 'none';
+                sig_p.style ['-moz-user-select'] = 'none';
+                sig_p.style ['-ms-user-select'] = 'none';
+                sig_p.style ['user-select'] = 'none';
                 sig_p.innerHTML = sig
                 sig_p.style ['font-size'] = 'calc(0.65vw + 0.35vh)'
                 sig_p.style.margin = 0
@@ -467,11 +467,16 @@ function drawWaveform (wave) {
                     var sigdiv = document.createElement ("div")
                     sigdiv.classList.add ('signalPick')
                     sigdiv.id = 'toggle_' + signal + '_' + i.toString()
-                    sigdiv.addEventListener ('click', toggleSignal)
                     var sigdivbox = document.createElement ("div")
                     sigdivbox.classList.add ('signalPickBox')
                     sigdivbox.innerHTML = SVG_DEF
                     var sig_p = document.createElement ("p")
+                    sig_p.style ['    -webkit-touch-callout'] = 'none';
+                    sig_p.style ['-webkit-user-select'] = 'none';
+                    sig_p.style ['-khtml-user-select'] = 'none';
+                    sig_p.style ['-moz-user-select'] = 'none';
+                    sig_p.style ['-ms-user-select'] = 'none';
+                    sig_p.style ['user-select'] = 'none';
                     sig_p.innerHTML = signal.replace (/\[[0-9]+\:0\]/, '').replace (/ /g, '') + '[' + i.toString() + ']'
                     sig_p.style ['font-size'] = 'calc(0.65vw + 0.35vh)'
                     sig_p.style.margin = '0'
@@ -483,6 +488,19 @@ function drawWaveform (wave) {
             bus.appendChild (portlist)
         })
     })
+
+    document.querySelectorAll (".signalPick").forEach (e => e.addEventListener ('mousedown', (evt) => {
+        window.multiSignalToggle = true
+        toggleSignal (evt)
+    }))
+    
+    document.querySelectorAll (".signalPick").forEach (e => e.addEventListener ('mouseenter', (evt) => {
+        if (window.multiSignalToggle) toggleSignal (evt)
+    }))
+    
+    document.querySelectorAll (".signalPick").forEach (e => e.addEventListener ('mouseup', (evt) => {
+        window.multiSignalToggle = false
+    }))
 
     // set border-right transition if XOR of two time events is 1
     for (var j = 0; j < document.querySelectorAll (".signaldiv")[1].querySelectorAll (".port,.signal").length; j++) {
