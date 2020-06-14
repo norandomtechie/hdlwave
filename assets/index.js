@@ -212,7 +212,7 @@ function writeNewWaveform() {
     window.wave = {
         'date': new Date().toString(),
         'events': {
-            '1': { 'hz100': '1', 'pb': '000000000000000000000', 'reset': '0', 'txready': '0', 'rxdata': '00100111', 'rxready': '0' },
+            '1': { 'hz100': '1', 'pb': '000000000000000000000', 'reset': '0', 'txready': '0', 'rxdata': '00000000', 'rxready': '0' },
             '2': { 'hz100': '0' },
             '3': { 'hz100': '1' },
             '4': { 'hz100': '0' },
@@ -241,6 +241,7 @@ function writeNewWaveform() {
         initWaveform()
         drawWaveform(window.wave)
     }, 300)
+    
 }
 
 function createWaveform (vcd) {
