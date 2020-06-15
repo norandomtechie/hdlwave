@@ -281,7 +281,7 @@ async function writeNewWaveform() {
                     console.log ("Wait. That's illegal."); console.log (p.parentElement.id); console.log (bus_id_match); debugger;
                 }
 
-                if (! (bit_id_match[1] in window.wave.events [bit_id_match[3]])) {
+                if (!(bit_id_match[1] in window.wave.events [bit_id_match[3]])) {
                     window.wave.events [bit_id_match[3]] [bit_id_match[1]] = '0'.repeat (parseInt (multisignals [bit_id_match[1]]))
                 }
 
@@ -324,8 +324,8 @@ async function writeNewWaveform() {
                         console.log ("Wait. That's illegal."); console.log (evt.target.parentElement.id); console.log (bus_id_match); debugger;
                     }
                     else {
-                        if (! (bit_id_match[1] in window.wave.events [bit_id_match[3]])) {
-                            window.wave.events [bit_id_match[3]] [bit_id_match[1]] = '0'.repeat (parseInt (multisignals [bit_id_match[1]]))
+                        if (!(bus_id_match[1] in window.wave.events [bus_id_match[3]])) {
+                            window.wave.events [bus_id_match[3]] [bus_id_match[1]] = '0'.repeat (parseInt (multisignals [bus_id_match[1]]))
                         }
 
                         if (newValue.length < parseInt (multisignals [bus_id_match[1]])) {
