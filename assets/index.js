@@ -272,30 +272,44 @@ async function writeNewWaveform() {
         }
     }
 
+    function updateUponToggle (evt) {
+        var p_elm = evt.target
+        var bit_id_match = p_elm.parentElement.id.match (/^(.+)_([0-9]+)_([0-9]+)$/)
+
+        if (!bit_id_match || bit_id_match.length < 4 || !bit_id_match[1] in multisignals) {
+            console.log ("Wait. That's illegal."); console.log (p.parentElement.id); console.log (bus_id_match); debugger;
+        }
+
+        if (!(bit_id_match[1] in window.wave.events [bit_id_match[3]]))
+            window.wave.events [bit_id_match[3]] [bit_id_match[1]] = '0'.repeat (parseInt (multisignals [bit_id_match[1]]))
+
+        var newValue = (window.wave.events [bit_id_match[3]] [bit_id_match[1]].slice (0, parseInt (multisignals [bit_id_match[1]]) - parseInt (bit_id_match[2]) - 1)) + 
+                       (!p_elm.style.borderBottom ? "1" : !p_elm.style.borderTop ? "0" : (() => { alert ("An error occurred while recalculating waveform values."); return 'err' })()) +
+                       (window.wave.events [bit_id_match[3]] [bit_id_match[1]].slice (parseInt (multisignals [bit_id_match[1]]) - parseInt (bit_id_match[2])));
+
+        document.querySelector ("#" + bit_id_match[1] + "_" + bit_id_match[3] + " p").innerHTML = window.busFormat == 'x' ? parseInt (newValue, 2).toString(16) : window.busFormat == 'b' ? newValue : parseInt (newValue, 2).toString()
+        window.wave.events [bit_id_match[3]] [bit_id_match[1]] = newValue
+    }
+
     var all_p = document.querySelectorAll (".signal.sigval,.port.sigval")
     all_p.forEach (p => {
         if (p.parentElement.id.includes ("hz100"))  // do not touch hz100 because that must be a fixed clock... for now
             return
         else if (p.innerHTML == '&nbsp;') { // must be a single wave or a bit
             p.style.cursor = 'pointer'
-            p.parentElement.onmousedown = (evt) => {
+            p.onmousedown = (evt) => {
+                window.bitTogglingDrag = true
                 bitToggle (evt)
-                var p_elm = evt.target
-                var bit_id_match = p_elm.parentElement.id.match (/^(.+)_([0-9]+)_([0-9]+)$/)
-
-                if (!bit_id_match || bit_id_match.length < 4 || !bit_id_match[1] in multisignals) {
-                    console.log ("Wait. That's illegal."); console.log (p.parentElement.id); console.log (bus_id_match); debugger;
+                updateUponToggle (evt)
+            }
+            p.onmouseenter = (evt) => {
+                if (window.bitTogglingDrag) {
+                    bitToggle (evt)
+                    updateUponToggle (evt)
                 }
-
-                if (!(bit_id_match[1] in window.wave.events [bit_id_match[3]]))
-                    window.wave.events [bit_id_match[3]] [bit_id_match[1]] = '0'.repeat (parseInt (multisignals [bit_id_match[1]]))
-
-                var newValue = (window.wave.events [bit_id_match[3]] [bit_id_match[1]].slice (0, parseInt (multisignals [bit_id_match[1]]) - parseInt (bit_id_match[2]) - 1)) + 
-                               (!p_elm.style.borderBottom ? "1" : !p_elm.style.borderTop ? "0" : (() => { alert ("An error occurred while recalculating waveform values."); return 'err' })()) +
-                               (window.wave.events [bit_id_match[3]] [bit_id_match[1]].slice (parseInt (multisignals [bit_id_match[1]]) - parseInt (bit_id_match[2])));
-
-                document.querySelector ("#" + bit_id_match[1] + "_" + bit_id_match[3] + " p").innerHTML = window.busFormat == 'x' ? parseInt (newValue, 2).toString(16) : window.busFormat == 'b' ? newValue : parseInt (newValue, 2).toString()
-                window.wave.events [bit_id_match[3]] [bit_id_match[1]] = newValue                           
+            }
+            p.onmouseup = (evt) => {
+                window.bitTogglingDrag = false
             }
             
         }
