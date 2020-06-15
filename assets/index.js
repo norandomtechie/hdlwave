@@ -260,8 +260,14 @@ async function writeNewWaveform() {
             if the signal is a bit of a bus, update the bus value
     */
 
-    function bitToggle (evt) {
-        if (evt.target.style.borderBottom == "")  {   // bit is 1, set to 0 
+    function bitToggle (evt, mode='toggle') {
+        if (mode == 'up') {
+            evt.target.style.borderBottom = ''; evt.target.style.borderTop = '1px solid green';
+        }
+        else if (mode == 'down') {
+            evt.target.style.borderBottom = '1px solid green'; evt.target.style.borderTop = '';
+        }
+        else if (evt.target.style.borderBottom == "")  {   // bit is 1, set to 0 
             evt.target.style.borderBottom = '1px solid green'; evt.target.style.borderTop = '';
         }
         else if (evt.target.style.borderTop == "") {
@@ -299,18 +305,16 @@ async function writeNewWaveform() {
             p.style.cursor = 'pointer'
             p.onmousedown = (evt) => {
                 window.bitTogglingDrag = true
-                bitToggle (evt)
+                bitToggle (evt, (evt.ctrlKey || evt.altKey || evt.metaKey) ? 'up' : evt.shiftKey ? 'down' : 'toggle')
                 updateUponToggle (evt)
             }
             p.onmouseenter = (evt) => {
                 if (window.bitTogglingDrag) {
-                    bitToggle (evt)
+                    bitToggle (evt, (evt.ctrlKey || evt.altKey || evt.metaKey) ? 'up' : evt.shiftKey ? 'down' : 'toggle')
                     updateUponToggle (evt)
                 }
             }
-            p.onmouseup = (evt) => {
-                window.bitTogglingDrag = false
-            }
+            p.onmouseup = (evt) => { window.bitTogglingDrag = false }
             
         }
         else {  // must be a multibit bus
