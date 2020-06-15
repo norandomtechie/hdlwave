@@ -206,7 +206,7 @@ function horizontalResizeMouse (e) {
     }
 }
 
-function writeNewWaveform() {
+async function writeNewWaveform() {
     signals = ['hz100', 'pb', 'reset', 'txready', 'rxdata', 'rxready']
     multisignals = { 'pb': 21, 'rxdata': 8 }
     window.wave = {
@@ -235,13 +235,127 @@ function writeNewWaveform() {
         'version': 'No version.  Manually generated.'
     }
     document.getElementById ("waveidle").style.opacity = '0'
-    setTimeout (() => {
-        document.getElementById ("waveidle").style.display = 'none'
-        Array.from (document.getElementById ("signalList").children).forEach (e => e.remove())
-        initWaveform()
-        drawWaveform(window.wave)
-    }, 300)
     
+    // wait for opacity to recede and do work in background.  Then, continue to set up waves for editing
+    await new Promise ((resolve, reject) => {
+        try { 
+            document.getElementById ("waveidle").style.display = 'none'
+            Array.from (document.getElementById ("signalList").children).forEach (e => e.remove())
+            initWaveform()
+            drawWaveform(window.wave);
+            setTimeout (() => { resolve () }, 300) 
+        }
+        catch (err) { reject (err) }
+    })
+
+    /* 
+        allow editing of buses to specify multiple bits at once
+        allow toggling of bits or single signals to 1 or 0
+            if the signal is a bit of a bus, update the bus value
+    */
+
+    function bitToggle (evt) {
+        if (evt.target.style.borderBottom == "")  {   // bit is 1, set to 0 
+            evt.target.style.borderBottom = '1px solid green'; evt.target.style.borderTop = '';
+        }
+        else if (evt.target.style.borderTop == "") {
+            evt.target.style.borderBottom = ''; evt.target.style.borderTop = '1px solid green';
+        }
+        else {
+            console.log ("Wait. That's illegal."); console.log (evt.target)
+        }
+    }
+
+    var all_p = document.querySelectorAll (".signal.sigval,.port.sigval")
+    all_p.forEach (p => {
+        if (p.parentElement.id.includes ("hz100"))  // do not touch hz100 because that must be a fixed reference clock... for now
+            return
+        else if (p.innerHTML == '&nbsp;') { // must be a single wave or a bit
+            p.style.cursor = 'pointer'
+            p.parentElement.onmousedown = (evt) => {
+                bitToggle (evt)
+                var p_elm = evt.target
+                var bit_id_match = p_elm.parentElement.id.match (/^(.+)_([0-9]+)_([0-9]+)$/)
+
+                if (!bit_id_match || bit_id_match.length < 4 || !bit_id_match[1] in multisignals) {
+                    console.log ("Wait. That's illegal."); console.log (p.parentElement.id); console.log (bus_id_match); debugger;
+                }
+
+                if (! (bit_id_match[1] in window.wave.events [bit_id_match[3]])) {
+                    window.wave.events [bit_id_match[3]] [bit_id_match[1]] = '0'.repeat (parseInt (multisignals [bit_id_match[1]]))
+                }
+
+                var newValue = (window.wave.events [bit_id_match[3]] [bit_id_match[1]].slice (0, parseInt (multisignals [bit_id_match[1]]) - parseInt (bit_id_match[2]) - 1)) + 
+                               (!p_elm.style.borderBottom ? "1" : !p_elm.style.borderTop ? "0" : (() => { alert ("An error occurred while recalculating waveform values."); return 'err' })()) +
+                               (window.wave.events [bit_id_match[3]] [bit_id_match[1]].slice (parseInt (multisignals [bit_id_match[1]]) - parseInt (bit_id_match[2])));
+
+                document.querySelector ("#" + bit_id_match[1] + "_" + bit_id_match[3] + " p").innerHTML = window.busFormat == 'x' ? parseInt (newValue, 2).toString(16) : window.busFormat == 'b' ? newValue : parseInt (newValue, 2).toString()
+                window.wave.events [bit_id_match[3]] [bit_id_match[1]] = newValue                           
+            }
+            
+        }
+        else {  // must be a multibit bus
+            p.style.cursor = 'pointer'
+            p.setAttribute ('contenteditable', 'true')
+            p.onmousedown = (evt) => { evt.target.setAttribute ('contenteditable', 'true'); }
+            p.onkeydown = (evt) => {
+                if (evt.key == "Enter") {
+                    evt.preventDefault()
+                    // remove newline
+                    evt.target.innerHTML = evt.target.innerHTML.replace (/\<br\>|\r?\n/g, '')
+
+                    if (evt.target.innerHTML.startsWith ("0b")) {
+                        evt.target.innerHTML = window.busFormat == 'b' ? evt.target.innerHTML : window.busFormat == 'x' ? '0x' + parseInt (evt.target.innerHTML.slice (2), 2).toString (16) : parseInt (evt.target.innerHTML.slice (2), 2).toString()
+                    }
+                    else if (evt.target.innerHTML.startsWith ("0x")) {
+                        evt.target.innerHTML = window.busFormat == 'x' ? evt.target.innerHTML : window.busFormat == 'b' ? '0b' + parseInt (evt.target.innerHTML, 16).toString (2) : parseInt (evt.target.innerHTML, 16).toString()
+                    }
+                    else if (!evt.target.innerHTML.match (/^[0-9]+$/)) {
+                        alert ("Please type a valid hexadecimal (prefix 0x), binary (prefix 0b), or decimal (no prefix) value.  Hex and binary values will be converted to decimal form (for now).")
+                        evt.target.innerHTML = "0"
+                    }
+                    evt.target.setAttribute ('contenteditable', 'false')
+                    
+                    // update bits based on changed value of bus
+                    var bus_id_match = evt.target.parentElement.id.match (/^(.+)_([0-9]+)$/)
+                    var newValue = window.busFormat == 'x' ? parseInt (evt.target.innerHTML, 16).toString (2) : window.busFormat == 'b' ? evt.target.innerHTML.slice (2) : parseInt (evt.target.innerHTML).toString (2)
+
+                    if (!bus_id_match || bus_id_match.length < 3 || !bus_id_match[1] in multisignals) {
+                        console.log ("Wait. That's illegal."); console.log (evt.target.parentElement.id); console.log (bus_id_match); debugger;
+                    }
+                    else {
+                        if (! (bit_id_match[1] in window.wave.events [bit_id_match[3]])) {
+                            window.wave.events [bit_id_match[3]] [bit_id_match[1]] = '0'.repeat (parseInt (multisignals [bit_id_match[1]]))
+                        }
+
+                        if (newValue.length < parseInt (multisignals [bus_id_match[1]])) {
+                            newValue = "0".repeat (parseInt (multisignals[bus_id_match[1]]) - newValue.length) + newValue
+                        }
+                        else if (parseInt (newValue, 2) > Math.pow (2, parseInt (multisignals [bus_id_match[1]])) - 1) {
+                            alert ("You have attempted to set a value higher than the permissible limit for this bus.  The text will now be set to that value.")
+                            newValue = "1".repeat (multisignals [bus_id_match[1]])
+                            evt.target.innerHTML = window.busFormat == 'x' ? parseInt (newValue, 2).toString(16) : window.busFormat == 'b' ? newValue : parseInt (newValue, 2).toString()
+                        }
+
+                        for (var i = parseInt (multisignals [bus_id_match[1]]) - 1; i >= 0; i--) {
+                            var p = document.querySelector ("#" + bus_id_match[1] + "_" + i.toString() + "_" + bus_id_match[2] + " p")
+                            if (p.style.borderBottom == "" && newValue [parseInt (multisignals [bus_id_match[1]]) - i - 1] == "0")  {   // bit is 1, set to 0 
+                                p.style.borderBottom = '1px solid green'; p.style.borderTop = '';
+                            }
+                            else if (p.style.borderTop == "" && newValue [parseInt (multisignals [bus_id_match[1]]) - i - 1] == "1") {
+                                p.style.borderBottom = ''; p.style.borderTop = '1px solid green';
+                            }
+                        }
+                        window.wave.events [bus_id_match[2]] [bus_id_match[1]] = newValue
+                    }
+
+                    evt.target.blur()
+                }
+                else if (!evt.key.match (/[^ac-wyz]/))
+                    evt.preventDefault()
+            }
+        }
+    })
 }
 
 function createWaveform (vcd) {
@@ -371,7 +485,6 @@ function toggleSignalPanel () {
 }
 
 function toggleSignal (evt) {
-    console.log (evt.target)
     if (evt.target.children[1].innerHTML in multisignals) {
         if (document.getElementById (evt.target.children[1].innerHTML).style.display == 'none') {
             // show all multisignals!
@@ -469,6 +582,14 @@ function drawWaveform (wave) {
                 sigdiv.appendChild (sig_p)
                 allSignalList.appendChild (sigdiv)
             }
+
+            sigtext.style ['-webkit-touch-callout'] = 'none';
+            sigtext.style ['-webkit-user-select'] = 'none';
+            sigtext.style ['-khtml-user-select'] = 'none';
+            sigtext.style ['-moz-user-select'] = 'none';
+            sigtext.style ['-ms-user-select'] = 'none';
+            sigtext.style ['user-select'] = 'none';
+
             signal.appendChild (sigtext)
             signaldiv.appendChild (signal)
         })
