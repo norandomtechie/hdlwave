@@ -180,6 +180,9 @@ function vcdToJSON (vcd) {
 }
 
 function zoomIn () {
+    pc_re = /([0-9\.]+)\%/
+    if (!(parseInt (document.getElementById ("zoom_level").innerHTML.match (pc_re)[1]) < 225))
+        return
     Array.from (document.querySelectorAll (".sigval")).forEach (e => {
         e.style.width = (parseFloat (e.style.width.slice (0, e.style.width.indexOf ("v"))) + 0.2).toPrecision (2).toString() + "vw"
     })
@@ -188,6 +191,9 @@ function zoomIn () {
 }
 
 function zoomOut () {
+    pc_re = /([0-9\.]+)\%/
+    if (!(parseInt (document.getElementById ("zoom_level").innerHTML.match (pc_re)[1]) > 40))
+        return
     Array.from (document.querySelectorAll (".sigval")).forEach (e => {
         e.style.width = (parseFloat (e.style.width.slice (0, e.style.width.indexOf ("v"))) - 0.2).toPrecision (2).toString() + "vw"
     })
@@ -200,7 +206,7 @@ function horizontalResizeMouse (e) {
         pc_re = /([0-9\.]+)\%/
         if (e.detail < 0 && parseInt (document.getElementById ("zoom_level").innerHTML.match (pc_re)[1]) < 225) // up 
             zoomIn ()
-        else if (parseInt (document.getElementById ("zoom_level").innerHTML.match (pc_re)[1]) > 50) // down
+        else if (parseInt (document.getElementById ("zoom_level").innerHTML.match (pc_re)[1]) > 40) // down
             zoomOut ()
         e.preventDefault()
     }
@@ -268,7 +274,7 @@ async function writeNewWaveform() {
 
     var all_p = document.querySelectorAll (".signal.sigval,.port.sigval")
     all_p.forEach (p => {
-        if (p.parentElement.id.includes ("hz100"))  // do not touch hz100 because that must be a fixed reference clock... for now
+        if (p.parentElement.id.includes ("hz100"))  // do not touch hz100 because that must be a fixed clock... for now
             return
         else if (p.innerHTML == '&nbsp;') { // must be a single wave or a bit
             p.style.cursor = 'pointer'
@@ -281,9 +287,8 @@ async function writeNewWaveform() {
                     console.log ("Wait. That's illegal."); console.log (p.parentElement.id); console.log (bus_id_match); debugger;
                 }
 
-                if (!(bit_id_match[1] in window.wave.events [bit_id_match[3]])) {
+                if (!(bit_id_match[1] in window.wave.events [bit_id_match[3]]))
                     window.wave.events [bit_id_match[3]] [bit_id_match[1]] = '0'.repeat (parseInt (multisignals [bit_id_match[1]]))
-                }
 
                 var newValue = (window.wave.events [bit_id_match[3]] [bit_id_match[1]].slice (0, parseInt (multisignals [bit_id_match[1]]) - parseInt (bit_id_match[2]) - 1)) + 
                                (!p_elm.style.borderBottom ? "1" : !p_elm.style.borderTop ? "0" : (() => { alert ("An error occurred while recalculating waveform values."); return 'err' })()) +
@@ -324,9 +329,8 @@ async function writeNewWaveform() {
                         console.log ("Wait. That's illegal."); console.log (evt.target.parentElement.id); console.log (bus_id_match); debugger;
                     }
                     else {
-                        if (!(bus_id_match[1] in window.wave.events [bus_id_match[2]])) {
+                        if (!(bus_id_match[1] in window.wave.events [bus_id_match[2]]))
                             window.wave.events [bus_id_match[2]] [bus_id_match[1]] = '0'.repeat (parseInt (multisignals [bus_id_match[1]]))
-                        }
 
                         if (newValue.length < parseInt (multisignals [bus_id_match[1]])) {
                             newValue = "0".repeat (parseInt (multisignals[bus_id_match[1]]) - newValue.length) + newValue
@@ -377,9 +381,6 @@ function createWaveform (vcd) {
         initWaveform()
         drawWaveform(json)
     }, 300)
-
-    document.getElementById ("waveforms").addEventListener ("DOMMouseScroll", horizontalResizeMouse)
-    document.getElementById ("waveforms").addEventListener ("mousewheel", horizontalResizeMouse)
 }
 
 function expandAll() {
@@ -800,6 +801,10 @@ window.onbeforeunload = () => {
 window.onload = () => {
     // document.documentElement.setAttribute ("theme", "light")
     // document.documentElement.setAttribute ("waveview", "true")
+
+    document.getElementById ("waveforms").addEventListener ("DOMMouseScroll", horizontalResizeMouse)
+    document.getElementById ("waveforms").addEventListener ("mousewheel", horizontalResizeMouse)
+
     if (window.localStorage.savedCode)
         window.codeEditor.setValue (window.localStorage.savedCode, -1)
     if (window.localStorage.ice40DarkMode == "true") {
