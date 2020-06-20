@@ -134,9 +134,9 @@ app.post ('/writetest', rateLimiterMiddleware || ((req, res, next) => { next() }
     else {
         wave = req.body.wave
         name = req.body.testname
-        fs.readFile ('tests/tb_template.cpp', null, (err, data) => {
-            data = data.toString()
+        fs.readFile (__dirname + '/tests/tb_template.cpp', null, (err, data) => {
             if (err) { console.error (err); res.json ({'status': 'failure', 'reason': 'Error opening template.'}); return }
+            data = data.toString()
             var testbench = []
             Object.keys (wave.events).forEach (time => {
                 testbench.push ("\r\n    main_time++;")
@@ -145,7 +145,7 @@ app.post ('/writetest', rateLimiterMiddleware || ((req, res, next) => { next() }
                 })
                 testbench.push ("\r\n    top->eval();\r\n")
             })
-            fs.writeFile ('tests/tb_' + name + '.cpp', data.replace ('/*<<TEMPLATEMARK>>*/', testbench.join ('\r\n')), (err) => {
+            fs.writeFile (__dirname + '/tests/tb_' + name + '.cpp', data.replace ('/*<<TEMPLATEMARK>>*/', testbench.join ('\r\n')), (err) => {
                 if (err)
                     res.json ({'status': 'failure', 'reason': 'Unable to save testbench file.'})
                 else
