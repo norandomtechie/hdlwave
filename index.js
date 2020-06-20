@@ -80,7 +80,7 @@ function validateVerilog(code) {
     })
 }
 
-if (process.env.ENABLERATELIMITING == '1') {
+if (process.env.ENABLERATELIMITING && process.env.ENABLERATELIMITING == '1') {
     const redis = require('redis');
     const redisClient = redis.createClient({ enable_offline_queue: false });
 
