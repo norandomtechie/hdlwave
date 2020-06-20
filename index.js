@@ -127,7 +127,7 @@ app.get ('/tests', (req, res) => {
     })
 })
 
-app.post ('/writetest', rateLimiterMiddleware || (req, res, next => { next() }), (req, res) => {
+app.post ('/writetest', rateLimiterMiddleware || ((req, res, next) => { next() }), (req, res) => {
     if (!(req.body.wave && req.body.testname)) {
         res.json ({'status': 'failure', 'reason': 'No wave data received.'})
     }
@@ -155,7 +155,7 @@ app.post ('/writetest', rateLimiterMiddleware || (req, res, next => { next() }),
     }
 })
 
-app.post ('/simulate', rateLimiterMiddleware || (req, res, next => { next() }), (req, res) => {
+app.post ('/simulate', rateLimiterMiddleware || ((req, res, next) => { next() }), (req, res) => {
     // get code
     validateVerilog (req.body.code)
     .then (result => {
