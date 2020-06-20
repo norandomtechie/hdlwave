@@ -283,7 +283,7 @@ async function writeNewWaveform() {
         var bit_id_match = p_elm.parentElement.id.match (/^(.+)_([0-9]+)_([0-9]+)$/)
 
         if (!bit_id_match || bit_id_match.length < 4 || !bit_id_match[1] in multisignals) {
-            console.log ("Wait. That's illegal."); console.log (p.parentElement.id); console.log (bus_id_match); debugger;
+            console.log ("Wait. That's illegal."); console.log (p_elm.parentElement.id); console.log (bit_id_match); debugger;
         }
 
         if (!(bit_id_match[1] in window.wave.events [bit_id_match[3]]))
