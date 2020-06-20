@@ -53,6 +53,12 @@
     --checkbox-background: rgba(210, 210, 210, 1);
 }
 
+#savetestbenchbtn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
 html {
     height: 100vh;
     width: 100vw;
@@ -306,6 +312,7 @@ h1 {
 
 #wavesettings {
     position: absolute;
+    width: 97.5%;
 }
 
 #waveforms {

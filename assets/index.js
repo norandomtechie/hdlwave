@@ -91,6 +91,7 @@ fetch ((window.location.pathname + "/tests").replace (/\/\//g, '/')).then (val =
     })
     var elm = document.createElement('button')
     elm.classList.add ('subbtn')
+    elm.id = 'newtestbench'
     elm.innerHTML = "New..."
     elm.value = "new"
     elm.addEventListener ("click", (e) => {
@@ -112,6 +113,7 @@ document.getElementById ("btn_simulate").addEventListener ("click", () => {
     //     alert ("To be able to view traces, you will need to include the necessary $dumpfile/$dumpvars directives.  Read the help page to learn how to do this.")
     //     return
     // }
+    document.getElementById ("savetestbenchbtn").style.display = ''
     document.getElementById ("waveforms").style.display = 'none'
     document.getElementById ("waveidle").style.opacity = 1
     document.getElementById ("waveidle").style.display = ''
@@ -161,7 +163,7 @@ function vcdToJSON (vcd) {
     })
     
     wave.events = {}
-    var eventStart = vcdlines.indexOf ("#1"),
+    var eventStart = (() => { for (var i = 0; i < vcdlines.length; i++) { if (vcdlines[i].match (/#[0-9]+/)) return i } })(),
         re_time = new RegExp (/#([0-9]+)/),
         re_single = new RegExp (/([0-1])([^ ])/),
         re_multiple = new RegExp (/b([0-1]+) (.)/),
@@ -212,7 +214,44 @@ function horizontalResizeMouse (e) {
     }
 }
 
+document.addEventListener ('keydown', e => {
+    console.log (e.key)
+})
+
+function submitTestbench() {
+    fetch ((window.location.pathname + "/writetest").replace (/\/\//g, '/'), {
+        'method': 'POST',
+        'headers': { 'Content-Type': 'application/json' },
+        'body': JSON.stringify({ 'wave': window.wave, 'testname': prompt ("Enter a testbench name to save: ").replace (/[^a-z0-9]+/g, '') })
+    }).then (val => val.text()).then (text => {
+        if (JSON.parse (text).status == 'success') {
+            var isAlreadyExisting = Array.from (document.getElementById ("testlist").children)
+                                    .map (e => (e.tagName == "BUTTON" && e.innerHTML == JSON.parse (text).test))
+                                    .reduce ((acc, cur) => { return acc || cur }, false)
+            
+            if (!isAlreadyExisting) {
+                var newbutton = document.getElementById ("newtestbench")
+                var elm = document.createElement('button')
+                elm.classList.add ('subbtn')
+                elm.innerHTML = JSON.parse (text).test
+                elm.value = JSON.parse (text).test
+                elm.addEventListener ("click", (e) => {
+                    document.getElementById ("droptest").innerHTML = e.target.value
+                    window.selected_test = e.target.value
+                    settingsInactive()
+                })
+                elm.addEventListener ("mouseleave", testsInactive)
+                document.getElementById ("testlist").insertBefore (elm, newbutton)
+            }
+        }
+        else {
+            alert (JSON.parse (text).reason)
+        }
+    })
+}
+
 async function writeNewWaveform() {
+    document.getElementById ("savetestbenchbtn").style.display = 'flex'
     signals = ['hz100', 'pb', 'reset', 'txready', 'rxdata', 'rxready']
     multisignals = { 'pb': 21, 'rxdata': 8 }
     window.wave = {
@@ -245,7 +284,7 @@ async function writeNewWaveform() {
     // wait for opacity to recede and do work in background.  Then, continue to set up waves for editing
     await new Promise ((resolve, reject) => {
         try { 
-            document.getElementById ("waveidle").style.display = 'none'
+            document.getElementById ("waveidle").style.display = ''
             Array.from (document.getElementById ("signalList").children).forEach (e => e.remove())
             initWaveform()
             drawWaveform(window.wave);
@@ -405,6 +444,7 @@ async function writeNewWaveform() {
 
 function createWaveform (vcd) {
     try {
+        window.vcd = vcd
         json = vcdToJSON (vcd)
         window.wave = json
         console.log (json)
