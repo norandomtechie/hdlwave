@@ -5,8 +5,8 @@ const fs = require ('fs')
 const process = require ('process')
 const crypto = require ('crypto')
 const bodyParser = require('body-parser')
-const rimraf = require('rimraf'),
-      geoip = require('geoip-lite'),
+const rimraf = require('rimraf')
+const geoip = require('geoip-lite'),
       server_log = function (req, res, next) {
                        ip_detail = geoip.lookup (req.ip)
                        var log = [
@@ -80,6 +80,35 @@ function validateVerilog(code) {
     })
 }
 
+if (process.env.ENABLERATELIMITING == '1') {
+    const redis = require('redis');
+    const redisClient = redis.createClient({ enable_offline_queue: false });
+
+    const { RateLimiterRedis } = require('rate-limiter-flexible');
+    const opts = {
+        // Basic options
+        storeClient: redisClient,
+        points: 3, // Number of points
+        duration: 1, // Per second(s)
+        
+        // Custom
+        execEvenly: false, // Do not delay actions evenly
+        blockDuration: 0, // Do not block if consumed more than points
+        keyPrefix: 'rlflx', // must be unique for limiters with different purpose
+    };
+    
+    const rateLimiterRedis = new RateLimiterRedis(opts);
+    
+    function rateLimiterMiddleware (req, res, next) {
+        rateLimiterRedis.consume(req.ip)
+        .then(() => { next() })
+        .catch(() => {
+            // Can't consume
+            res.status(429).send('Too Many Requests');
+        });
+    }
+}
+
 app.use (server_log)
 app.use (bodyParser.json());
 app.use (require('sanitize').middleware)
@@ -92,13 +121,39 @@ app.get ('/tests', (req, res) => {
             return
         }
         res.send (stdout.split ("\n")
-            .filter (e => e.includes (".cpp") && e.includes ("tb_"))
+            .filter (e => e.includes (".cpp") && e.includes ("tb_") && !(e == 'tb_template.cpp'))
             .map (e => e.replace ('.cpp', '').replace ('tb_', ''))
         )
     })
 })
 
-app.post ('/simulate', (req, res) => {
+app.post ('/writetest', rateLimiterMiddleware || (req, res, next => { next() }), (req, res) => {
+    if (!req.body.wave) {
+        res.json ({'status': 'failure', 'reason': 'No wave data received.'})
+    }
+    else {
+        fs.readFile ('tests/tb_template.cpp', null, (err, data) => {
+            if (err) { console.error (err); res.json ({'status': 'failure', 'reason': 'Error opening template.'}); return }
+            var testbench = []
+            Object.keys (req.body.wave.events).forEach (time => {
+                Object.keys (req.body.wave.events) [time].forEach (signal => {
+                    testbench.push ("top->" + signal + " = 0b" + Object.keys (req.body.wave.events) [time][signal])
+                })
+                testbench.push ("\r\ntop->eval();\r\n")
+            })
+            fs.writeFile (req.body.testname, data.replace ('/*<<TEMPLATEMARK>>*/', testbench.join ('\r\n')), (err) => {
+                if (err) {
+                    res.json ({'status': 'failure', 'reason': 'Unable to save testbench file.'})
+                }
+                else {
+                    res.json ({'status': 'success'})
+                }
+            })
+        })
+    }
+})
+
+app.post ('/simulate', rateLimiterMiddleware || (req, res, next => { next() }), (req, res) => {
     // get code
     validateVerilog (req.body.code)
     .then (result => {

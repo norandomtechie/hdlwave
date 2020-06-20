@@ -4,7 +4,8 @@
   "description": "Accepts a Verilog/SystemVerilog code/testbench pair, simulates it with Verilator, and outputs the results as a waveform.",
   "main": "index.js",
   "scripts": {
-    "main": "node index.js"
+    "server": "ENABLERATELIMITING=1 node index.js",
+    "user": "ENABLERATELIMITING=0 node index.js"
   },
   "author": "",
   "license": "ISC",
@@ -12,6 +13,8 @@
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "geoip-lite": "^1.4.2",
+    "rate-limiter-flexible": "^2.1.7",
+    "redis": "^3.0.2",
     "rimraf": "^3.0.2",
     "sanitize": "^2.1.0"
   }

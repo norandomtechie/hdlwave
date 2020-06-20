@@ -254,6 +254,19 @@ async function writeNewWaveform() {
         catch (err) { reject (err) }
     })
 
+    // ensure that text in single bit waves is not selectable otherwise you'll get weird white patches
+
+    document.querySelectorAll (".port.sigval").forEach (e => {
+        if (e.parentElement.id.match ((/^(.+)_([0-9]+)_([0-9]+)$/))) {
+          e.style ['-webkit-touch-callout'] = 'none';
+          e.style ['-webkit-user-select'] = 'none';
+          e.style ['-khtml-user-select'] = 'none';
+          e.style ['-moz-user-select'] = 'none';
+          e.style ['-ms-user-select'] = 'none';
+          e.style ['user-select'] = 'none';
+        }
+      })
+
     /* 
         allow editing of buses to specify multiple bits at once
         allow toggling of bits or single signals to 1 or 0
@@ -281,20 +294,30 @@ async function writeNewWaveform() {
     function updateUponToggle (evt) {
         var p_elm = evt.target
         var bit_id_match = p_elm.parentElement.id.match (/^(.+)_([0-9]+)_([0-9]+)$/)
+        var level_1_match = p_elm.parentElement.id.match (/^(.+)_([0-9]+)$/)
 
-        if (!bit_id_match || bit_id_match.length < 4 || !bit_id_match[1] in multisignals) {
+        if (!bit_id_match && level_1_match) {
+            var newValue = (!p_elm.style.borderBottom ? "1" : !p_elm.style.borderTop ? "0" : (() => { alert ("An error occurred while recalculating waveform values."); return 'err' })())
+            
+            if (!(level_1_match[1] in window.wave.events [level_1_match[2]]))
+                window.wave.events [level_1_match[2]] [level_1_match[1]] = '0'
+
+                window.wave.events [level_1_match[2]] [level_1_match[1]] = newValue
+        }
+        else if (!bit_id_match || bit_id_match.length < 4 || !bit_id_match[1] in multisignals) {
             console.log ("Wait. That's illegal."); console.log (p_elm.parentElement.id); console.log (bit_id_match); debugger;
         }
-
-        if (!(bit_id_match[1] in window.wave.events [bit_id_match[3]]))
-            window.wave.events [bit_id_match[3]] [bit_id_match[1]] = '0'.repeat (parseInt (multisignals [bit_id_match[1]]))
-
-        var newValue = (window.wave.events [bit_id_match[3]] [bit_id_match[1]].slice (0, parseInt (multisignals [bit_id_match[1]]) - parseInt (bit_id_match[2]) - 1)) + 
-                       (!p_elm.style.borderBottom ? "1" : !p_elm.style.borderTop ? "0" : (() => { alert ("An error occurred while recalculating waveform values."); return 'err' })()) +
-                       (window.wave.events [bit_id_match[3]] [bit_id_match[1]].slice (parseInt (multisignals [bit_id_match[1]]) - parseInt (bit_id_match[2])));
-
-        document.querySelector ("#" + bit_id_match[1] + "_" + bit_id_match[3] + " p").innerHTML = window.busFormat == 'x' ? parseInt (newValue, 2).toString(16) : window.busFormat == 'b' ? newValue : parseInt (newValue, 2).toString()
-        window.wave.events [bit_id_match[3]] [bit_id_match[1]] = newValue
+        else {
+            if (!(bit_id_match[1] in window.wave.events [bit_id_match[3]]))
+                window.wave.events [bit_id_match[3]] [bit_id_match[1]] = '0'.repeat (parseInt (multisignals [bit_id_match[1]]))
+    
+            var newValue = (window.wave.events [bit_id_match[3]] [bit_id_match[1]].slice (0, parseInt (multisignals [bit_id_match[1]]) - parseInt (bit_id_match[2]) - 1)) + 
+                           (!p_elm.style.borderBottom ? "1" : !p_elm.style.borderTop ? "0" : (() => { alert ("An error occurred while recalculating waveform values."); return 'err' })()) +
+                           (window.wave.events [bit_id_match[3]] [bit_id_match[1]].slice (parseInt (multisignals [bit_id_match[1]]) - parseInt (bit_id_match[2])));
+    
+            document.querySelector ("#" + bit_id_match[1] + "_" + bit_id_match[3] + " p").innerHTML = window.busFormat == 'x' ? parseInt (newValue, 2).toString(16) : window.busFormat == 'b' ? newValue : parseInt (newValue, 2).toString()
+            window.wave.events [bit_id_match[3]] [bit_id_match[1]] = newValue
+        }
     }
 
     var all_p = document.querySelectorAll (".signal.sigval,.port.sigval")
