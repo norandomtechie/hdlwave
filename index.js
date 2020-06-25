@@ -155,6 +155,10 @@ app.post ('/writetest', rateLimiterMiddleware || ((req, res, next) => { next() }
     }
 })
 
+app.get ('/embed', (req, res) => {
+    res.sendFile (__dirname + '/embed.html')
+})
+
 app.post ('/simulate', rateLimiterMiddleware || ((req, res, next) => { next() }), (req, res) => {
     // get code
     validateVerilog (req.body.code)
@@ -211,7 +215,7 @@ app.post ('/simulate', rateLimiterMiddleware || ((req, res, next) => { next() })
     })
 })
 
-app.get ('*/', (req, res) => {
+app.get ('/', (req, res) => {
     res.sendFile (__dirname + "/index.html")
 })
 

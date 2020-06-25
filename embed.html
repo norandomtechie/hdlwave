@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HDLwave embeddable</title>
+    <link href="assets/hdlwave.css" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300&display=swap" rel="stylesheet"> 
+    <style>
+        p {
+            font-family: 'Open Sans';
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body></body>
+<script src="assets/hdlwave.js"></script>
+<script>
+    var waveform = new HDLwave (document.body, {
+        // 'resolution': 20,
+        'inputs': {'a': 'zzz01101001010xx101010', 'b': 'zz10101010xxx101010'},
+        'outputs': {'c': 'prob4_c', 'd': 'prob4_d'},
+        'modifyLength': true // this will prevent users from changing the time of the waveform
+    })
+    window.onload = () => {
+        setTimeout (() => {document.body.style.opacity = '1'}, 200)
+    }
+</script>
+</html>
