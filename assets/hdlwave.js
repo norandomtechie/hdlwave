@@ -26,12 +26,28 @@ class HDLwave {
 
         function pullSignalByEvent (e, opt=0) {
             if (opt == 0) {
+                e.target.classList.remove ('logicZ')
+                e.target.classList.remove ('logicX')
                 e.target.classList.remove ('logic1')
                 e.target.classList.add ('logic0')
             }
             else if (opt == 1) {
+                e.target.classList.remove ('logicZ')
+                e.target.classList.remove ('logicX')
                 e.target.classList.remove ('logic0')
                 e.target.classList.add ('logic1')
+            }
+            else if (opt == 'X') {
+                e.target.classList.remove ('logic1')
+                e.target.classList.remove ('logic0')
+                e.target.classList.remove ('logicZ')
+                e.target.classList.add ('logicX')
+            }
+            else if (opt == 'Z') {
+                e.target.classList.remove ('logic1')
+                e.target.classList.remove ('logic0')
+                e.target.classList.remove ('logicX')
+                e.target.classList.add ('logicZ')
             }
             else {
                 throw "opt value was not valid."
@@ -44,11 +60,14 @@ class HDLwave {
         if (e.shiftKey) { pullSignalByEvent (e, 0); return }
         else if ((e.ctrlKey || e.metaKey)) { pullSignalByEvent (e, 1); return }
 
-        if (e.target.classList.contains ('logic1')) {
-            pullSignalByEvent (e, 0)
-        }
-        else if (e.target.classList.contains ('logic0')) {
+        if (window.signalMetastable) { pullSignalByEvent (e, 'X'); return }
+        if (window.signalDisconnect) { pullSignalByEvent (e, 'Z'); return }
+
+        if (!e.target.classList.contains ('logic1')) {
             pullSignalByEvent (e, 1)
+        }
+        else if (!e.target.classList.contains ('logic0')) {
+            pullSignalByEvent (e, 0)
         }
     }
     addUnitToWaverow (waverow, signal, time, cssClass) {
@@ -101,8 +120,35 @@ class HDLwave {
             }
         }
 
-        this.hostDiv.onmouseup = () => { window.dragToggle = false }
-        this.hostDiv.ondragend = () => { window.dragToggle = false }
+        document.body.onmouseup = () => { window.dragToggle = false }
+        document.body.ondragend = () => { window.dragToggle = false }
+        document.body.onkeydown = (e) => {
+            var lastIndex = document.getElementById ('activeval').innerHTML.lastIndexOf (';')
+            if (e.key.match (/z/i)) {
+                window.signalDisconnect = true
+                document.getElementById ('activeval').innerHTML = document.getElementById ('activeval').innerHTML.slice (0, lastIndex + 1) + 'Z'
+                return
+            }
+            else if (e.key.match (/x/i)) {
+                window.signalMetastable = true
+                document.getElementById ('activeval').innerHTML = document.getElementById ('activeval').innerHTML.slice (0, lastIndex + 1) + 'X'
+                return
+            }
+            if (e.shiftKey) {
+                document.getElementById ('activeval').innerHTML = document.getElementById ('activeval').innerHTML.slice (0, lastIndex + 1) + '0'
+                return
+            }
+            else if (e.ctrlKey || e.altKey) {
+                document.getElementById ('activeval').innerHTML = document.getElementById ('activeval').innerHTML.slice (0, lastIndex + 1) + '1'
+                return
+            }
+        }
+        document.body.onkeyup = (e) => {
+            window.signalMetastable = false
+            window.signalDisconnect = false
+            var lastIndex = document.getElementById ('activeval').innerHTML.lastIndexOf (';')
+            document.getElementById ('activeval').innerHTML = document.getElementById ('activeval').innerHTML.slice (0, lastIndex + 1) + 'N'
+        }
 
         var waverow = document.createElement ("div")
         waverow.classList.add ('waverow')
@@ -136,6 +182,12 @@ class HDLwave {
             waverow.appendChild (addbtn)
             waverow.appendChild (subbtn)
         }
+
+        // Active value
+        var activeVal = document.createElement ("p")
+        activeVal.id = 'activeval'
+        activeVal.innerHTML = 'Forcing value:&nbsp;&nbsp;'
+        waverow.appendChild (activeVal)
         
         this.hostDiv.appendChild (waverow)
 
