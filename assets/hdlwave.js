@@ -186,7 +186,7 @@ class HDLwave {
         // Active value
         var activeVal = document.createElement ("p")
         activeVal.id = 'activeval'
-        activeVal.innerHTML = 'Forcing value:&nbsp;&nbsp;'
+        activeVal.innerHTML = 'Forcing value:&nbsp;&nbsp;N'
         waverow.appendChild (activeVal)
         
         this.hostDiv.appendChild (waverow)
