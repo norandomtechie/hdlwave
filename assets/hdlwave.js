@@ -2,7 +2,11 @@ class HDLwave {
     constructor(hostDiv, options) {
         this.hostDiv = hostDiv  
         this.options = options
+        if (!window.$) {
+            throw "jQuery required for event handling. Please add jQuery to your page's head tag before HDLwave loads."
+        }
         this.drawBoard()
+        this.fixTransitions()
     }
     modTimeCol (opt=0) {
         switch (opt) {
@@ -21,63 +25,157 @@ class HDLwave {
                 break;
         }
     }
+    fixTransitions (idx=-1) {
+        if (idx == -1) {
+            Array.from (document.querySelectorAll (".event")).slice (1).forEach ((curr, i) => {
+                if (i < (Array.from (document.querySelectorAll (".event")).slice (1).length - 1)) {
+                    var next = Array.from (document.querySelectorAll (".event")).slice (1)[i + 1]
+                    var highlow = (curr.classList.contains ('logic1')) && (next.classList.contains ('logic0'))
+                    var ztoz = (curr.classList.contains ('logicZ')) && (next.classList.contains ('logicZ'))
+                    var lowhigh = (curr.classList.contains ('logic0')) && (next.classList.contains ('logic1'))
+                    var samesignal = curr.id.slice (0, curr.id.indexOf ('/')) == next.id.slice (0, next.id.indexOf ('/'))
+                    if ((highlow || lowhigh) && samesignal) {
+                        curr.style.borderRight = '1px solid green'  
+                        next.style.borderLeft = '1px solid green'  
+                    }
+                }
+            })
+        }
+        else {
+            var curr = Array.from (document.querySelectorAll (".event")).slice (1)[idx]
+            if (idx < (Array.from (document.querySelectorAll (".event")).slice (1).length - 1)) {
+                var next = Array.from (document.querySelectorAll (".event")).slice (1)[idx + 1]
+                var highlow = (curr.classList.contains ('logic1')) && (next.classList.contains ('logic0'))
+                var lowhigh = (curr.classList.contains ('logic0')) && (next.classList.contains ('logic1'))
+                var ztoz = (curr.classList.contains ('logicZ')) && (next.classList.contains ('logicZ'))
+                var samesignal = curr.id.slice (0, curr.id.indexOf ('/')) == next.id.slice (0, next.id.indexOf ('/'))
+                if ((highlow || lowhigh) && samesignal) {
+                    curr.style.borderRight = '1px solid green'  
+                    next.style.borderLeft = '1px solid green'  
+                }
+                else if ((!highlow || lowhigh) || (highlow || !lowhigh) && samesignal) {
+                    curr.style.borderRight = ''  
+                    next.style.borderLeft = ''  
+                }
+            }
+            if (idx > 0) {
+                var prev = Array.from (document.querySelectorAll (".event")).slice (1)[idx - 1]
+                var highlow = (curr.classList.contains ('logic1')) && (prev.classList.contains ('logic0'))
+                var lowhigh = (curr.classList.contains ('logic0')) && (prev.classList.contains ('logic1'))
+                var ztoz = (curr.classList.contains ('logicZ')) && (next.classList.contains ('logicZ'))
+                var samesignal = curr.id.slice (0, curr.id.indexOf ('/')) == prev.id.slice (0, prev.id.indexOf ('/'))
+                if ((highlow || lowhigh) && samesignal) {
+                    curr.style.borderLeft = '1px solid green'  
+                    prev.style.borderRight = '1px solid green'  
+                }
+                else if ((!highlow || lowhigh) || (highlow || !lowhigh) && samesignal) {
+                    curr.style.borderLeft = ''  
+                    prev.style.borderRight = ''  
+                }
+            }
+        }
+    }
+    setZForUnitElement (e, opt=0) {
+        switch (opt) {
+            case 0: // remove
+                if (e.children.length == 1) { 
+                    e.children[0].remove()
+                }
+                break;
+            case 1: // add
+                if (e.children.length == 0) {
+                    var tophalf = document.createElement ("div")
+                    tophalf.classList.add ('subLogicZ')
+                    e.appendChild (tophalf)
+                }
+                break;
+        }
+    }
+    setXForUnitElement (e, opt=0) {
+        switch (opt) {
+            case 0: // remove
+                if (e.nodeName == "P" && e.parentNode.innerHTML != '') {
+                    e.parentNode.classList.remove ('logicX')
+                    e.parentNode.innerHTML = ''
+                }
+                else if (e.nodeName == "DIV") {
+                    e.innerHTML = ''
+                    e.classList.remove ('logicX')
+                }
+                break;
+            case 1: // add
+                if (e.innerHTML == '') {
+                    console.log ("Added")
+                    e.innerHTML = '<p class="unselectable" style="color: red; font-size: 24px;">X</p>'
+                    e.classList.add ('logicX')
+                }
+                break;
+        }
+    }
     toggleEvent (e) {
         e.preventDefault()
-
-        function pullSignalByEvent (e, opt=0) {
+        var _this = e.data
+        function pullSignalByEvent (e, _this, opt=0) {
             if (opt == 0) {
-                e.target.classList.remove ('logicZ')
-                e.target.classList.remove ('logicX')
+                _this.setXForUnitElement (e.target, 0)
+                _this.setZForUnitElement (e.target, 0)
                 e.target.classList.remove ('logic1')
                 e.target.classList.add ('logic0')
             }
             else if (opt == 1) {
-                e.target.classList.remove ('logicZ')
-                e.target.classList.remove ('logicX')
+                _this.setXForUnitElement (e.target, 0)
+                _this.setZForUnitElement (e.target, 0)
                 e.target.classList.remove ('logic0')
                 e.target.classList.add ('logic1')
             }
             else if (opt == 'X') {
                 e.target.classList.remove ('logic1')
                 e.target.classList.remove ('logic0')
-                e.target.classList.remove ('logicZ')
-                e.target.classList.add ('logicX')
+                _this.setZForUnitElement (e.target, 0)
+                _this.setXForUnitElement (e.target, 1)
             }
             else if (opt == 'Z') {
                 e.target.classList.remove ('logic1')
                 e.target.classList.remove ('logic0')
-                e.target.classList.remove ('logicX')
-                e.target.classList.add ('logicZ')
+                _this.setXForUnitElement (e.target, 0)
+                _this.setZForUnitElement (e.target, 1)
             }
             else {
                 throw "opt value was not valid."
             }
+            _this.fixTransitions (Array.from (document.querySelectorAll (".event")).slice (1).indexOf (e.target))
         }
 
         if (e.type == 'mousedown') { window.dragToggle = true }
         else if (e.type == 'mouseenter' && !window.dragToggle) { return }
         
-        if (e.shiftKey) { pullSignalByEvent (e, 0); return }
-        else if ((e.ctrlKey || e.metaKey)) { pullSignalByEvent (e, 1); return }
+        if (e.shiftKey) { pullSignalByEvent (e, _this, 0); return }
+        else if ((e.ctrlKey || e.metaKey)) { pullSignalByEvent (e, _this, 1); return }
 
-        if (window.signalMetastable) { pullSignalByEvent (e, 'X'); return }
-        if (window.signalDisconnect) { pullSignalByEvent (e, 'Z'); return }
+        if (window.signalMetastable) { pullSignalByEvent (e, _this, 'X'); return }
+        if (window.signalDisconnect) { pullSignalByEvent (e, _this, 'Z'); return }
 
         if (!e.target.classList.contains ('logic1')) {
-            pullSignalByEvent (e, 1)
+            pullSignalByEvent (e, _this, 1)
         }
         else if (!e.target.classList.contains ('logic0')) {
-            pullSignalByEvent (e, 0)
+            pullSignalByEvent (e, _this, 0)
         }
     }
     addUnitToWaverow (waverow, signal, time, cssClass) {
         var unit = document.createElement ("div")
+        if (cssClass == 'logicZ') {
+            this.setZForUnitElement (unit, 1)
+        }
+        else if (cssClass == 'logicX') {
+            unit.innerHTML = '<p class="unselectable" style="color: red; font-size: 24px;">X</p>'
+        }
         unit.classList.add ('event', cssClass)
         
         unit.id = [signal, time].join ('/')
         if (!Object.keys (this.options.inputs).includes (signal)) {
-            unit.addEventListener ('mousedown', this.toggleEvent)
-            unit.addEventListener ('mouseenter', this.toggleEvent)
+            $(document).on ('mousedown', '#' + unit.id.replace ('/', '\\/'), this, this.toggleEvent)
+            $(document).on ('mouseenter', '#' + unit.id.replace ('/', '\\/'), this, this.toggleEvent)
         }
         waverow.appendChild (unit)
     }
@@ -120,7 +218,7 @@ class HDLwave {
             }
         }
 
-        document.body.onmouseup = () => { window.dragToggle = false }
+        this.hostDiv.onmouseup = () => { window.dragToggle = false }
         document.body.ondragend = () => { window.dragToggle = false }
         document.body.onkeydown = (e) => {
             var lastIndex = document.getElementById ('activeval').innerHTML.lastIndexOf (';')
@@ -207,8 +305,7 @@ class HDLwave {
                 var value = Object.keys (this.options.inputs).includes (signal) ?
                             (this.options.inputs [signal][i] || '0').match (/1/i) ? 'logic1' :
                             (this.options.inputs [signal][i] || '0').match (/0/i) ? 'logic0' :
-                            (this.options.inputs [signal][i] || '0').match (/Z/i) ? 'logicZ' : 'logicX' :
-                            'logic0'
+                            (this.options.inputs [signal][i] || '0').match (/Z/i) ? 'logicZ' : 'logicX' : 'logic0'
                 this.addUnitToWaverow (waverow, signal, i, value)
             }
             this.hostDiv.appendChild (waverow)

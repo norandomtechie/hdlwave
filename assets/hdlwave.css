@@ -5,6 +5,8 @@
     width: 40px;
     height: 40px;
     border: 2px solid rgba(0, 0, 0, 0.05);
+    border-left: 1px solid rgba(0, 0, 0, 0.05);
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 .unselectable {
     /* https://stackoverflow.com/questions/2310734/how-to-make-html-text-unselectable */
@@ -33,10 +35,16 @@
 .logicX {
     border-top: 2px solid red;
     border-bottom: 2px solid red;
+    display: flex;
+    align-items: center;
 }
-.logicZ {
-    border-top: 2px solid orange;
-    border-bottom: 2px solid orange;
+.subLogicZ {
+    background-color: orange;
+    height: 2px;
+    width: calc(100% + 1px);
+}
+.logicZ:after {
+    width: 
 }
 .waverow {
     display: flex;
