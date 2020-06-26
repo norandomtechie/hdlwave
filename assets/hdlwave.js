@@ -1,10 +1,11 @@
 class HDLwave {
     constructor(hostDiv, options) {
-        this.hostDiv = hostDiv  
-        this.options = options
         if (!window.$) {
             throw "jQuery required for event handling. Please add jQuery to your page's head tag before HDLwave loads."
         }
+        hostDiv.innerHTML = ''
+        this.hostDiv = hostDiv  
+        this.options = options
         this.drawBoard()
         this.fixTransitions()
     }
@@ -94,7 +95,7 @@ class HDLwave {
     setXForUnitElement (e, opt=0) {
         switch (opt) {
             case 0: // remove
-                if (e.nodeName == "P" && e.parentNode.innerHTML != '') {
+                if (e.nodeName == "P" && e.parentNode && e.parentNode.innerHTML != '') {
                     e.parentNode.classList.remove ('logicX')
                     e.parentNode.innerHTML = ''
                 }
@@ -146,14 +147,13 @@ class HDLwave {
             _this.fixTransitions (Array.from (document.querySelectorAll (".event")).slice (1).indexOf (e.target))
         }
 
-        if (e.type == 'mousedown') { window.dragToggle = true }
-        else if (e.type == 'mouseenter' && !window.dragToggle) { return }
+        if ((e.type == 'mousedown' || e.type == 'pointerdown')) { window.dragToggle = true }
+        else if ((e.type == 'mouseenter' || e.type == 'pointerenter') && !window.dragToggle) { return }
         
-        if (e.shiftKey) { pullSignalByEvent (e, _this, 0); return }
-        else if ((e.ctrlKey || e.metaKey)) { pullSignalByEvent (e, _this, 1); return }
-
-        if (window.signalMetastable) { pullSignalByEvent (e, _this, 'X'); return }
-        if (window.signalDisconnect) { pullSignalByEvent (e, _this, 'Z'); return }
+        if (_this.options.forcedValue == 0) { pullSignalByEvent (e, _this, 0); return }
+        else if (_this.options.forcedValue == 1) { pullSignalByEvent (e, _this, 1); return }
+        else if (_this.options.forcedValue == 'X') { pullSignalByEvent (e, _this, 'X'); return }
+        else if (_this.options.forcedValue == 'Z') { pullSignalByEvent (e, _this, 'Z'); return }
 
         if (!e.target.classList.contains ('logic1')) {
             pullSignalByEvent (e, _this, 1)
@@ -178,6 +178,11 @@ class HDLwave {
             $(document).on ('mouseenter', '#' + unit.id.replace ('/', '\\/'), this, this.toggleEvent)
         }
         waverow.appendChild (unit)
+    }
+    forceValue (opt='T') {
+        $(".logicSelected").removeClass ('logicSelected')
+        $('#forceLogic' + opt).addClass ('logicSelected')
+        this.options.forcedValue = opt
     }
     drawBoard () {
         function optionsAreValid (options) {
@@ -220,33 +225,6 @@ class HDLwave {
 
         this.hostDiv.onmouseup = () => { window.dragToggle = false }
         document.body.ondragend = () => { window.dragToggle = false }
-        document.body.onkeydown = (e) => {
-            var lastIndex = document.getElementById ('activeval').innerHTML.lastIndexOf (';')
-            if (e.key.match (/z/i)) {
-                window.signalDisconnect = true
-                document.getElementById ('activeval').innerHTML = document.getElementById ('activeval').innerHTML.slice (0, lastIndex + 1) + 'Z'
-                return
-            }
-            else if (e.key.match (/x/i)) {
-                window.signalMetastable = true
-                document.getElementById ('activeval').innerHTML = document.getElementById ('activeval').innerHTML.slice (0, lastIndex + 1) + 'X'
-                return
-            }
-            if (e.shiftKey) {
-                document.getElementById ('activeval').innerHTML = document.getElementById ('activeval').innerHTML.slice (0, lastIndex + 1) + '0'
-                return
-            }
-            else if (e.ctrlKey || e.altKey) {
-                document.getElementById ('activeval').innerHTML = document.getElementById ('activeval').innerHTML.slice (0, lastIndex + 1) + '1'
-                return
-            }
-        }
-        document.body.onkeyup = (e) => {
-            window.signalMetastable = false
-            window.signalDisconnect = false
-            var lastIndex = document.getElementById ('activeval').innerHTML.lastIndexOf (';')
-            document.getElementById ('activeval').innerHTML = document.getElementById ('activeval').innerHTML.slice (0, lastIndex + 1) + 'N'
-        }
 
         var waverow = document.createElement ("div")
         waverow.classList.add ('waverow')
@@ -284,9 +262,35 @@ class HDLwave {
         // Active value
         var activeVal = document.createElement ("p")
         activeVal.id = 'activeval'
-        activeVal.innerHTML = 'Forcing value:&nbsp;&nbsp;N'
+        activeVal.innerHTML = 'Force value:&nbsp;&nbsp;'
         waverow.appendChild (activeVal)
-        
+
+        var logic0, logic1;
+        [logic0, logic1] = [document.createElement ("div"), document.createElement ("div")]
+        logic0.classList.add ('btn');  logic1.classList.add ('btn')
+        logic0.innerHTML = '<p class="unselectable" style="font-size: 20px">0</p>'
+        logic1.innerHTML = '<p class="unselectable" style="font-size: 20px">1</p>'
+        logic0.id = 'forceLogic0'; logic1.id = 'forceLogic1'
+        logic0.addEventListener ('click', () => { this.forceValue ('0') }); logic1.addEventListener ('click', () => { this.forceValue ('1') })
+        waverow.appendChild (logic0); waverow.appendChild (logic1); 
+
+        var logicX, logicZ;
+        [logicX, logicZ] = [document.createElement ("div"), document.createElement ("div")]
+        logicX.classList.add ('btn');  logicZ.classList.add ('btn')
+        logicX.innerHTML = '<p class="unselectable" style="font-size: 20px">X</p>'
+        logicZ.innerHTML = '<p class="unselectable" style="font-size: 20px">Z</p>'
+        logicX.id = 'forceLogicX'; logicZ.id = 'forceLogicZ'
+        logicX.addEventListener ('click', () => { this.forceValue ('X') }); logicZ.addEventListener ('click', () => { this.forceValue ('Z') })
+        waverow.appendChild (logicX); waverow.appendChild (logicZ); 
+
+        var logicT = document.createElement ("div")
+        logicT.classList.add ('btn', 'logicSelected')
+        logicT.innerHTML = '<p class="unselectable" style="font-size: 20px">T</p>'
+        logicT.title = 'Default toggling mode (flips between 1 and 0 or vice versa when clicking and/or dragging through wave events.'
+        logicT.id = 'forceLogicT'
+        logicT.addEventListener ('click', () => { this.forceValue ('T') });
+        waverow.appendChild (logicT); 
+
         this.hostDiv.appendChild (waverow)
 
         signals.forEach (signal => { if (signal.length > maxchars) { maxchars = signal.length } })
