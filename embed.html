@@ -48,6 +48,12 @@
                 eval(window.editor.getValue())
             }
         })
+        $(document).on ('touchstart', 'body', (e) => {
+            console.log ('touchstart')
+        })
+        $(document).on ('touchmove', 'body', (e) => {
+            console.log ('touchmove')
+        })
     }
 </script>
 </html>

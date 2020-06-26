@@ -171,6 +171,7 @@ class HDLwave {
         unit.id = [signal, time].join ('/')
         if (!Object.keys (this.options.inputs).includes (signal)) {
             $(document).on ('mousedown', '#' + unit.id.replace ('/', '\\/'), this, this.toggleEvent)
+            $(document).on ('touchstart', '#' + unit.id.replace ('/', '\\/'), this, this.toggleEvent)
             $(document).on ('mouseenter', '#' + unit.id.replace ('/', '\\/'), this, this.toggleEvent)
         }
         waverow.appendChild (unit)
