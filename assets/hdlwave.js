@@ -106,7 +106,6 @@ class HDLwave {
                 break;
             case 1: // add
                 if (e.innerHTML == '') {
-                    console.log ("Added")
                     e.innerHTML = '<p class="unselectable" style="color: red; font-size: 24px;">X</p>'
                     e.classList.add ('logicX')
                 }
@@ -144,11 +143,11 @@ class HDLwave {
             _this.fixTransitions (Array.from (document.querySelectorAll (".event")).slice (1).indexOf (e.target))
         }
 
-        if ((e.type == 'mousedown' || e.type == 'pointerdown')) { window.dragToggle = true }
-        else if ((e.type == 'mouseenter' || e.type == 'pointerenter') && !window.dragToggle) { return }
+        if ((e.type == 'mousedown' || e.type == 'touchstart')) { window.dragToggle = true }
+        else if ((e.type == 'mouseenter' || e.type == 'touchmove') && !window.dragToggle) { return }
         
-        if (_this.options.forcedValue == 0) { pullSignalByEvent (e, _this, 0); return }
-        else if (_this.options.forcedValue == 1) { pullSignalByEvent (e, _this, 1); return }
+        if (_this.options.forcedValue == '0') { pullSignalByEvent (e, _this, 0); return }
+        else if (_this.options.forcedValue == '1') { pullSignalByEvent (e, _this, 1); return }
         else if (_this.options.forcedValue == 'X') { pullSignalByEvent (e, _this, 'X'); return }
         else if (_this.options.forcedValue == 'Z') { pullSignalByEvent (e, _this, 'Z'); return }
 
