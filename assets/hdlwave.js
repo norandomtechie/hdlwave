@@ -141,9 +141,6 @@ class HDLwave {
                 _this.setXForUnitElement (e.target, 0)
                 _this.setZForUnitElement (e.target, 1)
             }
-            else {
-                throw "opt value was not valid."
-            }
             _this.fixTransitions (Array.from (document.querySelectorAll (".event")).slice (1).indexOf (e.target))
         }
 
