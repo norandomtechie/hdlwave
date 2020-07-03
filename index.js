@@ -155,9 +155,10 @@ app.post ('/writetest', rateLimiterMiddleware || ((req, res, next) => { next() }
     }
 })
 
-app.get ('/embed', (req, res) => {
-    res.sendFile (__dirname + '/embed.html')
+app.get ('/wavedraw/', (req, res) => {
+    res.sendFile (__dirname + '/wavedraw/embed.html')
 })
+app.use ('/wavedraw', express.static (__dirname + '/wavedraw'))
 
 app.post ('/simulate', rateLimiterMiddleware || ((req, res, next) => { next() }), (req, res) => {
     // get code

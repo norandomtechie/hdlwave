@@ -1,5 +1,5 @@
 {
-  "name": "hdl2wave",
+  "name": "hdlwave",
   "version": "0.0.1",
   "description": "Accepts a Verilog/SystemVerilog code/testbench pair, simulates it with Verilator, and outputs the results as a waveform.",
   "main": "index.js",
