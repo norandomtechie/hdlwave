@@ -214,10 +214,6 @@ function horizontalResizeMouse (e) {
     }
 }
 
-document.addEventListener ('keydown', e => {
-    console.log (e.key)
-})
-
 function submitTestbench() {
     fetch ((window.location.pathname + "/writetest").replace (/\/\//g, '/'), {
         'method': 'POST',
