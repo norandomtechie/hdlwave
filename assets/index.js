@@ -89,17 +89,19 @@ fetch ((window.location.pathname + "/tests").replace (/\/\//g, '/')).then (val =
         elm.addEventListener ("mouseleave", testsInactive)
         document.getElementById ("testlist").appendChild (elm)
     })
-    var elm = document.createElement('button')
-    elm.classList.add ('subbtn')
-    elm.id = 'newtestbench'
-    elm.innerHTML = "New..."
-    elm.value = "new"
-    elm.addEventListener ("click", (e) => {
-        writeNewWaveform()
-        settingsInactive()
-    })
-    elm.addEventListener ("mouseleave", testsInactive)
-    document.getElementById ("testlist").appendChild (elm)
+
+    // Let's disable making new testbenches for now...
+    // var elm = document.createElement('button')
+    // elm.classList.add ('subbtn')
+    // elm.id = 'newtestbench'
+    // elm.innerHTML = "New..."
+    // elm.value = "new"
+    // elm.addEventListener ("click", (e) => {
+    //     writeNewWaveform()
+    //     settingsInactive()
+    // })
+    // elm.addEventListener ("mouseleave", testsInactive)
+    // document.getElementById ("testlist").appendChild (elm)
 })
 
 document.body.addEventListener ('keydown', (e) => {
@@ -109,10 +111,6 @@ document.body.addEventListener ('keydown', (e) => {
 })
 
 document.getElementById ("btn_simulate").addEventListener ("click", () => {
-    // if (!window.codeEditor.getValue().includes ("$dumpfile") || !window.codeEditor.getValue().includes ("$dumpvars")) {
-    //     alert ("To be able to view traces, you will need to include the necessary $dumpfile/$dumpvars directives.  Read the help page to learn how to do this.")
-    //     return
-    // }
     document.getElementById ("savetestbenchbtn").style.display = ''
     document.getElementById ("waveforms").style.display = 'none'
     document.getElementById ("waveidle").style.opacity = 1
