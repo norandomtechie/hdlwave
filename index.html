@@ -2,99 +2,813 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>
-        // for some reason, on production, does not parse URLs correctly but it works just fine on localhost for some reason
-        var base = document.createElement ("base")
-        base.href = window.location.href.slice (window.location.href.length - 1) == "/" ? window.location.href : window.location.href + "/"
-        document.getElementsByTagName ("head")[0].appendChild (base)
-    </script>
-    <!-- <base href="/hdlwave"> -->
-    <title>HDLwave</title>
-    <link rel="stylesheet" href="assets/fontawesome/css/all.css">
-    <link rel="stylesheet" href="assets/index.css">
-    <script src="assets/fontawesome/js/all.js"></script>
-    <link rel="stylesheet" href="wavedraw/wavedraw.css">
+    <script src="assets/ace/src-noconflict/ace.js"></script>
     <script src="wavedraw/wavedraw.js"></script>
+    <link rel="stylesheet" href="wavedraw/wavedraw.css">
+    <title>HDLwave</title>
+    <style>
+        html {
+            width: 100%;
+            height: 100%;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            background-color: var(--bg-color);
+            transition: all 0.2s;
+        }
+        h1, h2, h3, h4, p, label {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            color: var(--text-color);
+            margin: 0.2em;
+        }
+        h1, h2, h3, h4 {
+            font-weight: normal;
+        }
+        nav {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            flex: 0 1 auto;
+            justify-content: space-around;
+            border-bottom: 1px solid var(--softer-border);
+            padding: 1vh 0 1vh 0;
+            transition: all 0.2s;
+        }
+        #iconset, #btnset {
+            flex-basis: 40%;
+        }
+        #title {
+            flex-basis: 20%;
+        }
+        #iconset > :not(:first-child) {
+            margin-left: 1vw;
+        }
+        #btnset > :not(:last-child) {
+            margin-right: 2vw;
+        }
+        nav > * {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+        nav > *:first-child {
+            justify-content: flex-start;
+            padding-left: 1vw;
+        }
+        nav > *:last-child {
+            justify-content: flex-end;
+            padding-right: 1vw;
+        }
+        #btnset {
+            justify-content: flex-end;
+        }
+        .row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+        }
+        .col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            padding: 1vh 0.1vw 1vh 0.5vw;
+            display: flex;
+            height: 100%;
+            align-items: center;
+            justify-content: space-around;
+            overflow: hidden;
+            flex-direction: var(--orientation-flex-direction);
+        }
+        #acediv, #wavedraw {
+            box-sizing: border-box;
+            width: var(--orientation-width);
+            height: 100%;
+            flex: 1 1 auto;
+            padding: 0.5vh 0.5vw 0.5vh 0.5vw;
+            overflow-y: scroll;
+            overflow-x: auto;
+        }
+        .navbtn {
+            min-width: 150px;
+            width: max-content;
+            height: 35px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--softer-border);
+            border-radius: 5px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-size: 100%;
+        }
+        .btn-primary {
+            background-color: rgb(41, 41, 170, 0.1);
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: rgb(41, 41, 170, 0.3);
+        }
+        .overlay {
+            display: none;
+            opacity: 0;
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            background: var(--overlay-bg);
+            top: 0;
+            left: 0;
+            z-index: 99;
+            align-items: center;
+            justify-content: center;
+        }
+        .overlay-visible {
+            display: flex;
+            opacity: 1;
+        }
+        #showerrorlog {
+            cursor: pointer;
+            text-decoration: underline solid var(--text-color) auto;
+        }
+        #errorlog {
+            display: flex;
+            flex-direction: column;
+            width: 65vw;
+            height: 50vh;
+            padding: 1.5%;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            background: var(--errorlog-bg);
+        }
+        #errorlog > p {
+            flex-basis: 10%;
+            text-align: center;
+            font-size: 20px;
+        }
+        #errorlog > textarea {
+            flex-basis: 90%;
+            resize: none;
+            background: #000;
+            color: #fff;
+            font-family: Consolas;
+        }
+        #errorlog > p, #errorlog > textarea {
+            width: 100%;
+        }
+        @media screen and (max-width: 1300px) {
+            #iconset .row {
+                display: none;
+            }
+        }
+        #themeSwitchCylinder, #orientationCylinder {
+            width: 50px;
+            height: 25px;
+            border: 1px solid var(--softer-border);
+            background-color: var(--themeswitch-bg-color);
+            border-radius: 25px;
+            transition: background-color 0.2s;
+        }
+
+        #themeSwitchCircle, #orientationCircle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            top: -5px;
+            left: var(--switch-position);
+            width: 35px;
+            height: 35px;
+            border: 1px solid var(--softer-border);
+            background-color: var(--bg-color);
+            border-radius: 100%;
+            transition: all 0.2s;
+        }
+        #orientationCircle {
+            left: var(--orientation-switch-position);
+            color: var(--text-color);
+        }
+
+        #orientationCircle:before {
+            content: var(--orientation-switch-icon);
+        }
+        #themeSwitchCircle:before {
+            content: var(--switch-icon);
+        }
+        #ace_settingsmenu {
+            background-color: var(--bg-color)!important;
+        }
+        .btn {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        #status {
+            margin-left: 0;
+        }
+        .slider {
+            height: var(--slider-height);
+            background-color: var(--slider-bg);
+            width: var(--slider-width);
+            z-index: 99;
+            position: fixed;
+            transition: padding 0.1s;
+            cursor: var(--slider-cursor);
+        }
+        .slider:hover {
+            padding: var(--slider-padding);
+        }
+        .select {
+            min-width: 230px;
+            height: 3.5vh;
+            border: 1px solid var(--softer-border);
+            border-radius: 5px 5px 0px 0px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            flex-wrap: wrap;
+        }
+        .downbtn {
+            width: 20%;
+            height: 100%;
+            border-left: 1px solid var(--softer-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+            font-size: 75%;
+        }
+        .dropdown {
+            position: relative;
+            left: -1px;
+            width: 100%;
+            height: 0px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--softer-border);
+            z-index: 99;
+            border-top: none;
+            flex-shrink: 0;
+            transition: all ease-in-out 0.2s;
+            overflow: hidden;
+        }
+        .select:hover .dropdown, .dropdown:hover {
+            border-top: 1px solid var(--softer-softer-border);
+            min-height: 200px;
+            height: max-content;
+        }
+        .testtitle, .testname {
+            transition: background-color 0.2s;
+        }
+        .testtitle:first-child, #testbenchtitle {
+            color: var(--disabled-text-color);
+            font-style: italic;
+        }
+        .testtitle:not(#testbenchtitle):hover, .testname:hover {
+            background-color: var(--bg-hover);
+        }
+        /* ********************************************************* */
+        [panelorientation="vertical"] {
+            --orientation-flex-direction: row;
+            --orientation-width: 50%;
+            --orientation-switch-icon: "||";
+            --orientation-switch-position: -15px;
+            --slider-height: 92.5%;
+            --slider-width: 3px;
+            --slider-cursor: e-resize;
+            --slider-padding: 0 5px 0 5px;
+        }
+        [panelorientation="horizontal"] {
+            --orientation-flex-direction: column;
+            --orientation-width: 100%;
+            --orientation-switch-icon: "═";
+            --orientation-switch-position: 25px;
+            --slider-height: 3px;
+            --slider-width: 100%;
+            --slider-cursor: n-resize;
+            --slider-padding: 7px 0 7px 0;
+        }
+        :root {
+            --border-color: #444;
+            --text-color: #111;
+            --disabled-text-color: rgb(17, 17, 17, 0.75);
+            --switch-icon: "☀️";
+            --switch-position: -15px;
+            --themeswitch-bg-color: #dddddf;
+            --bg-color: #ccc;
+            --overlay-bg: rgba(255, 255, 255, 0.7);
+            --errorlog-bg: rgba(200, 200, 200, 0.7);
+            --bg-hover: #aaa;
+            --self-bg-color: #eef;
+            --disabled-text-color: rgba(0, 0, 0, 0.7);
+            --softer-border: rgba(10, 10, 10, 0.5);
+            --softer-softer-border: rgba(10, 10, 10, 0.25);
+            --slider-bg: rgba(176, 176, 176, 0.7);
+        }
+        
+        [theme="dark"] {
+            --border-color: #bbb;
+            --text-color: #eee;
+            --disabled-text-color: rgb(238, 238, 238, 0.75);
+            --switch-icon: "🌙";
+            --switch-position: 25px;
+            --themeswitch-bg-color: #2a2a2b;
+            --bg-color: #1a1a1b;
+            --overlay-bg: rgba(0, 0, 0, 0.7);
+            --errorlog-bg: rgba(35, 35, 35, 0.8);
+            --bg-hover: #333;
+            --self-bg-color: #112;
+            --disabled-text-color: rgba(240, 240, 240, 0.7);
+            --softer-border: rgba(240, 240, 240, 0.5);
+            --softer-softer-border: rgba(240, 240, 240, 0.25);
+            --slider-bg: rgba(50, 50, 50, 0.7);
+        }
+        /* ********************************************************* */
+    </style>
 </head>
 <body>
-    <header><p style="font-size: calc(0.75vw + 1vh)">HDLwave<sub style="font-size: calc(0.35vw + 1vh)">&nbsp;beta</sub></p></header>
-    <div id="settingheader">
-        <div style="height: 100%; width: 100%; display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
-            <div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
-                <p style="font-size: calc(0.25vw + 1vh); margin: 0 0 0 calc(0.5vw)">Version 0.2.0</p>
-                <p style="font-size: calc(0.25vw + 1vh); margin: 0 0 0 calc(0.5vw)">This is Niraj's mess!</p>
+    <nav>
+        <div id="iconset">
+            <div class="row">
+                <p>v2.0.0 | Fall 2021</p>
             </div>
-            <div>
-                <div id="dropdown">
-                    <button class="btn" id="dropbtn">Settings</button>
-                    <div id="dropcontent">
-                        <div class="item">
-                            <p style="margin: 0 0 0 calc(0.5vw)">Dark Mode</p>
-                            <label class="switch">
-                                <input id="darkmode" checked type="checkbox"></input>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div class="item">
-                            <p style="margin: 0 0 0 calc(0.5vw)">Select testbench</p>
-                            <div id="testlist">
-                                <div class="subbtn" id="droptest">Select...</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <button class="btn" id="btn_simulate">Simulate</button>
-                <button class="btn" onclick="window.location.href = '/user/logout'" id="btn_logout">Log Out</button>
-                <script>
-                    // look, there's no point going to /user/logout on localhost or my personal site - they do nothing!
-                    // just hide the button if not running from verilog.ecn
-                    if (!window.location.href.startsWith ('https://verilog.ecn.purdue.edu'))
-                        document.getElementById ("btn_logout").style.display = 'none'
-                </script>
-            </div>
-        </div>
-    </div>
-    <div style="width: 100%; height: 90vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start;">
-        <div id="codebase">
-            <div id="codeview"></div>
-        </div>
-        <div id="waveviewer">
-            <div id="wavesettings">
-                <p class="action" onclick="expandAll()" id="action_expand_all">Expand all</p>
-                <p class="action" onclick="collapseAll()" id="action_collapse_all">Collapse all</p>
-                <div style="display: flex; flex-direction: row; align-items: center; justify-content: center;">
-                    <p class="action" onclick="zoomOut(event)" style="margin: 0 0.25vw 0 0.8vw" id="action_zoom_out">-</p>
-                    <p style="margin: 0 0.25vw 0 0.25vw; font-size: calc(0.2vw + 1vh);" id="zoom_level">100%</p>
-                    <p class="action" onclick="zoomIn(event)" style="margin: 0 0.8vw 0 0.25vw" id="action_zoom_in">+</p>
-                </div>
-                <button class="sigbtn action" onclick="toggleSignalPanel()" id="signallistbtn" style="height: auto; opacity: 1">Show/hide signals</button>
-                <button class="sigbtn action" onclick="submitTestbench()" id="savetestbenchbtn" style="height: auto; opacity: 1">Generate testbench</button>
-            </div>
-            <div id="waveforms"></div>
-            <div style="width: 100%; margin-top: 1vh;"></div>
-            <p id="waveidle">No waveform has been generated yet.</p>
-        </div>
-    </div>
-    <div class="overlay" id="overlay"></div>
-    <div class="overlay" id="divSignalList">
-        <div id="panelSignalList">
-            <div style="width: 100%; display: flex; justify-content: flex-end;">
-                <i class="fa fa-window-close" style="color: var(--text-color)" onclick="toggleSignalPanel()" aria-hidden="true"></i>
-            </div>
-            <h1>Signal view</h1>
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; width: 100%">
-                <p style="font-size: calc(0.35vw + 1vh); text-align: center;">Click on a signal to show/hide it on the waveform.  You can also show or hide all signals at once (this lags with a large number of signals, so wait for a bit after clicking).</p>
-                <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-evenly; width: 100%">
-                    <p onclick="Array.from (document.getElementsByClassName ('signalPick')).reverse().map (e => { if (e.querySelector ('div').innerHTML == '') {var evt = new Event ('toggle'); e.dispatchEvent (evt); toggleSignal (evt) } }); window.multiSignalToggle = false" style="padding: 0.6%; border: 1px solid var(--line-color); border-radius: 4px; cursor: pointer">Show all signals</p>
-                    <p onclick="Array.from (document.getElementsByClassName ('signalPick')).reverse().map (e => { if (e.querySelector ('div').innerHTML != '') {var evt = new Event ('toggle'); e.dispatchEvent (evt); toggleSignal (evt) } }); window.multiSignalToggle = false" style="padding: 0.6%; border: 1px solid var(--line-color); border-radius: 4px; cursor: pointer">Hide all signals</p>
+            <a id="showerrorlog" onclick="document.querySelector('.overlay').classList.toggle('overlay-visible')"><p>View Status Logs</p></a>
+            <div class="select">
+                <p style="margin-left: 4px;">Test Type...</p>
+                <div class="downbtn">▼</div>
+                <div class="dropdown">
+                    <p class="testtitle">Waveforms</p>
+                    <p class="testname" id="usewaveform">Use waveform</p>
+                    <hr>
+                    <p class="testtitle" id="testbenchtitle">Testbenches</p>
+                    <hr>
                 </div>
             </div>
-            <div id="signalList"></div>
+        </div>
+        <h2 id="title">HDLwave</h2>
+        <div id="btnset">
+            <p id="status">Status: Ready</p>
+            <span id="orientationCylinder" role="img" aria-label="theme_switch" onclick="toggleOrientation()">
+                <span id="orientationCircle"></span>
+            </span>
+            <span id="themeSwitchCylinder" role="img" aria-label="theme_switch" onclick="toggleTheme()">
+                <span id="themeSwitchCircle"></span>
+            </span>
+            <button class="navbtn btn-primary" onclick="testCode()">Test</button>
+        </div>
+    </nav>
+    <div class="container">
+        <div id="wavedraw"></div>
+        <div class="slider"></div>
+        <div id="acediv"></div>
+    </div>
+    <div class="overlay">
+        <div id="errorlog">
+            <p>Error Log</p>
+            <textarea readonly>No logs have been produced.</textarea>
         </div>
     </div>
+    <input style="display: none" class="waveforminput" id="reset"></input>
+    <input style="display: none" class="waveforminput" id="pb_20"></input>
+    <input style="display: none" class="waveforminput" id="rxdata_7"></input>
+    <input style="display: none" class="waveforminput" id="txready"></input>
+    <input style="display: none" class="waveforminput" id="rxready"></input>
 </body>
-<script src="assets/ace/ace.js" type="text/javascript" charset="utf-8"></script>
-<script src="assets/split.min.js"></script>
-<script src="assets/index.js"></script>
+<script>
+    function toggleOrientation() {
+        var mode = document.documentElement.getAttribute("panelorientation") || "vertical";
+        window.waveDraw.style.height = '';
+        window.waveDraw.style.width = '';
+        window.aceDiv.style.height = '';
+        window.aceDiv.style.width = '';
+        window.slider.style.top = '';
+        window.slider.style.left = '';
+        if (mode == "horizontal") {
+            document.documentElement.setAttribute("panelorientation", "vertical");
+        }
+        else {
+            document.documentElement.setAttribute("panelorientation", "horizontal");
+        }
+        editor.resize();
+    }
+    if (!document.documentElement.getAttribute("panelorientation")) {
+        document.documentElement.setAttribute("panelorientation", "vertical");
+    }
+    function toggleTheme() {
+        var mode = document.documentElement.getAttribute("theme") || "";
+        if (mode == "dark") {
+            editor.setTheme("ace/theme/chrome");
+            document.documentElement.setAttribute("theme", "light");
+        } else {
+            editor.setTheme("ace/theme/chaos");
+            document.documentElement.setAttribute("theme", "dark");
+        }
+    }
+    var editor = ace.edit(document.querySelector("#acediv"), {
+        mode: "ace/mode/verilog",
+        selectionStyle: "text"
+    });
+    if (!localStorage.hdlwaveCode) {
+        editor.setValue(`\`default_nettype none
+        
+        module top (
+          // I/O ports
+          input  logic hz100, reset,
+          input  logic [20:0] pb,
+          output logic [7:0] left, right, ss7, ss6, ss5, ss4, ss3, ss2, ss1, ss0,
+          output logic red, green, blue,
+        
+          // UART ports
+          output logic [7:0] txdata,
+          input  logic [7:0] rxdata,
+          output logic txclk, rxclk,
+          input  logic txready, rxready
+        );
+        
+          // Your code goes here...
+          
+        endmodule
+    
+          // Add more modules down here...`.replace(/    /g, ''), -1);
+    }
+    else {
+        editor.setValue(localStorage.hdlwaveCode, -1);
+    }
+    editor.setTheme("ace/theme/chrome");
+    editor.setFontSize(16);
+    editor.setShowPrintMargin(false);
+    
+    window.wd = new WaveDraw(document.getElementById("wavedraw"),
+    {
+        editable: { "reset": '#reset', "pb[20:0]": '#pb_20', "rxdata[7:0]": "#rxdata_7", "txready": "#txready", "rxready": "#rxready" },
+        fixed: { 'hz100': '0101010101',
+                'left_7': '00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000',
+                'right_7': '00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000',
+                'ss7_7': '00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000', 
+                'ss6_7': '00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000',
+                'ss5_7': '00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000',
+                'ss4_7': '00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000', 
+                'ss3_7': '00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000',
+                'ss2_7': '00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000',
+                'ss1_7': '00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000', 
+                'ss0_7': '00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000',
+                'red': '0000000000',
+                'green': '0000000000', 
+                'blue': '0000000000',
+                'txdata_7': '00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000',
+                'rxclk': '0000000000',
+                'txclk': '0000000000'
+            },
+        signalOrder: [
+            'hz100',
+            'reset',
+            'pb',
+            'left',
+            'right',
+            'ss7',
+            'ss6',
+            'ss5',
+            'ss4',
+            'ss3',
+            'ss2',
+            'ss1',
+            'ss0',
+            'red',
+            'green',
+            'blue',
+            // keep the UART at the bottom for now, including inputs
+            'txready',
+            'rxready',
+            'rxdata',
+            'txdata',
+            'rxclk',
+            'txclk'
+        ],
+        clocks: [
+            'hz100'
+        ],
+        timescale: '5ms',
+        allowXValues: false,
+        allowZValues: false,
+        modifyLength: true,
+        disabled: false,
+    });
+
+    window.onbeforeunload = () => {
+        localStorage.hdlwaveCode = editor.getValue();
+    }
+
+    function updateStatus(msg) {
+        document.querySelector("#status").textContent = `Status: ${msg}`;
+    }
+
+    document.body.onkeydown = (e) => {
+        if (e.key == 'Escape') {
+            document.querySelector('.overlay').classList.toggle('overlay-visible', false);
+        }
+        else if (/^[sS]$/.test(e.key) && e.ctrlKey) {
+            e.preventDefault();
+            testCode();
+        }
+    }
+
+    function updateTestByElm(e) {
+        updateTest(e.currentTarget.innerHTML);
+    }
+    function updateTest(tst) {
+        window.currentTest = tst;
+        document.querySelector('.select p').innerHTML = tst;
+    }
+
+    fetch('tests').then(val => val.json()).then(tests => {
+        tests.forEach(t => {
+            var telm = document.createElement('p');
+            telm.classList.add('testname');
+            telm.innerHTML = t;
+            telm.addEventListener('click', updateTestByElm);
+            var tbtitle = document.querySelector('#testbenchtitle');
+            tbtitle.parentNode.insertBefore(telm, tbtitle.nextSibling);
+        });
+    });
+
+    document.querySelector("#usewaveform").addEventListener('click', updateTestByElm);
+
+    function padWithSignedBit(val, len) {
+        if (val[0] == "1") {
+            return "0".repeat(len - val.length) + val;
+        }
+        else {
+            return val[0].repeat(len - val.length) + val;
+        }
+    }
+
+    window.errorLog = document.querySelector("#errorlog textarea");
+
+    async function testCode() {
+        if (window.bongoCatIntval) {
+            clearInterval(window.bongoCatIntval);
+            delete window.bongoCatIntval;
+        }
+        // request simulation
+        editor.getSession().clearAnnotations();
+        updateStatus("Connecting...");
+        if (!window?.currentTest) {
+            updateTest('Use waveform');
+        }
+        var postBody = (window.currentTest == 'Use waveform') ? 
+            JSON.stringify({eventMap: window.wd.getEventMap(editableOnly=true), mode: 'waveform', code: editor.getValue()}) :
+            JSON.stringify({code: editor.getValue(), mode: 'testbench', testbench: window.currentTest});
+        var response = await fetch('v2/simulate', {
+            headers: {"Content-Type": "application/json"}, 
+            body: postBody,
+            method: "POST"
+        });
+        window.errorLog.value = "Data successfully sent to server.\n\n";
+        
+        // check response
+        window.responseJSON = await response.json();
+        if (window.responseJSON.status != 'success') {
+            window.errorLog.value += `ERROR in code compilation: \n${window.responseJSON.reason}\n`;
+            var annotations = [];
+            window.responseJSON.reason.split("\n").forEach (ln => {
+                if (/.sv:[0-9]+: .+/.test(ln)) {
+                    annotations.push({
+                        row: parseInt(ln.match(/.sv:([0-9]+): .+/)[1]) - 1,
+                        column: 0,
+                        text: ln.match(/.sv:[0-9]+: (.+)/)[1], 
+                        type: "error" // also "warning" and "information"
+                    });
+                }
+                editor.getSession().setAnnotations(annotations);
+            });
+            alert ("Error: " + window.responseJSON.reason);
+            updateStatus("Error in code");
+            return;
+        }
+
+        // attempt to process VCD data.
+        updateStatus("Rendering...");
+        try {
+            var wave = vcdToJSON(window.responseJSON.vcd);
+        }
+        catch(err) {
+            window.errorLog.value += `ERROR in VCD parser:\n${err.toString()}\n\n`;
+            window.errorLog.value += `JSON object received:\n${window.responseJSON}\n\n`;
+            alert("A fatal error occurred trying to process the simulation outputs.  Send a copy of the status log to a TA.");
+            updateStatus("Error - check logs");
+        }
+
+        // if VCD is produced correctly, render it in WaveDraw instance
+        try {
+            var signals = Object.keys(wave.events[1]);
+            var lastVal = {};
+            if (window.wd.options.resolution < Object.keys(wave.events).length) {
+                for (var i = Object.keys(wave.events).length - window.wd.options.resolution; i > 0; i--)
+                    window.wd.modTimeCol (0);
+            }
+            else if (window.wd.options.resolution > Object.keys(wave.events).length) {
+                for (var i = window.wd.options.resolution - Object.keys(wave.events).length; i > 0; i--)
+                    window.wd.modTimeCol (1);
+            }
+            Object.keys(wave.events).forEach(idx => {
+                var time = parseInt(idx) - 1;
+                var event = wave.events[idx];
+                signals.forEach (s => {
+                    var sig = window.wd.options.signals.filter(si => si.startsWith(s))[0];
+                    if (s == sig) {     // then this is a single-bit signal
+                        // set unit signal to 1/0/x/z
+                        if (s in event)
+                            lastVal[s] = event[s];
+                        window.wd.pullSignalByElement(window.wd.hostDiv.querySelector(`#${s}_${time}`), window.wd, lastVal[s].toUpperCase(), fixedOverride=true);
+                    }
+                    else {              // otherwise it's a multi-bit one
+                        var len = parseInt(sig.match(/[a-z0-9]+_([0-9]+)/)[1]);
+                        var c = null;
+                        // go through event 0, 1, 2... on j
+                        // go through sig[0], sig[1], sig[2]... on i
+                        if (s in event)
+                            lastVal[s] = padWithSignedBit(event[s], len + 1);
+                        for (var i = 0; i <= len; i++) {
+                            c = lastVal[s][lastVal[s].length - i - 1];
+                            // else, let c remain that way
+                            // set unit signal to 1/0/x/z
+                            window.wd.pullSignalByElement(window.wd.hostDiv.querySelector(`#${s}_${len}_${i}_${time}`), window.wd, c.toUpperCase(), fixedOverride=true);
+                        }
+                    }
+                })
+            })
+            setTimeout(async () => {
+                window.errorLog.value += `Waveforms rendered successfully.\n`;
+                updateStatus("Ready");
+            }, 1);
+        }
+        catch(err) {
+            window.errorLog.value += `ERROR in wave rendering stage:\n${err.toString()}\n`;
+            window.errorLog.value += `Repsonse data:\n${window.responseJSON.toString()}\n\n`;
+            window.errorLog.value += `Parsed wave object:\n${wave.toString()}\n\n`;
+            updateStatus("Error - check logs");
+        }
+    }
+
+    function vcdToJSON (vcd) {
+        var wave = {}
+        signals = [], multisignals = {}
+        wave.version = vcd.match (/\$version *([^\$]+)\n* *\$end/)[1].trim()
+        wave.date = vcd.match (/\$date *([^\$]+)\n* *\$end/)[1].trim()
+        wave.timescale = vcd.match (/\$timescale *([^\$]+)\n* *\$end/)[1].trim()
+        
+        wave.signal_map = {}
+        
+        var port_def_regex = /var (?:wire|reg) +([0-9]+) +([^ ]+) +([^\$]+) +\$end/;
+        var vcdlines = vcd.split ("\n");
+        vcdlines.forEach (sig => {
+            // sig.match (port_def_regex)[2] in wave.signal_map added so that submodules do not overwrite the port map for the top module ports
+            if (sig.match (port_def_regex) && !signals.includes (sig.match (port_def_regex)[3].replace (/\[[0-9]+\:0\]/, '').replace (/ /g, '')) && !(sig.match (port_def_regex)[2] in wave.signal_map)) {
+                signals.push (sig.match (port_def_regex)[3].replace (/\[[0-9]+\:0\]/, '').replace (/ /g, ''))
+                wave.signal_map [sig.match (port_def_regex)[2]] = sig.match (port_def_regex)[3].replace (/\[[0-9]+\:0\]/, '').replace (/ /g, '')
+                if (parseInt (sig.match (port_def_regex)[1]) > 1)
+                    multisignals [sig.match (port_def_regex)[3].replace (/\[[0-9]+\:0\]/, '').replace (/ /g, '')] = sig.match (port_def_regex)[1]
+            }
+        });
+        
+        wave.events = {}
+        var eventStart = (() => { for (var i = 0; i < vcdlines.length; i++) { if (vcdlines[i].match (/#[0-9]+/)) return i } })(),
+            re_time = new RegExp (/#([0-9]+)/),
+            re_single = new RegExp (/([01zx])([^ ]+)/),
+            re_multiple = new RegExp (/b([01zx]+) ([^ ]+)/),
+            currentTime = 0;
+        for (i = eventStart; i < vcdlines.length; i++) {
+            if (vcdlines[i].match (re_time)) {
+                for (; (parseInt(vcdlines[i].match (re_time)[1]) + 1) - currentTime > 0; )
+                    wave.events [++currentTime] = {}
+            }
+            else if (vcdlines[i].match (re_single) && !vcdlines[i].match (re_multiple)) {
+                wave.events [currentTime][wave.signal_map [vcdlines[i].match (re_single)[2]]] = vcdlines[i].match (re_single)[1]
+            }
+            else if (vcdlines[i].match (re_multiple)) {
+                wave.events [currentTime][wave.signal_map [vcdlines[i].match (re_multiple)[2]]] = vcdlines[i].match (re_multiple)[1]
+            }
+        }
+        return wave;
+    }
+    
+    // slider dragging
+    // credits for the crash course:
+    // https://stackoverflow.com/questions/46931103/making-a-dragbar-to-resize-divs-inside-css-grids
+    window.slider = document.querySelector('.slider');
+    window.aceDiv = document.querySelector('#acediv');
+    window.waveDraw = document.querySelector('#wavedraw');
+    window.containerDiv = document.querySelector('.container');
+    window.isDragging = false;
+    document.addEventListener('mousedown', function(e) {
+        // If mousedown event is fired from .handler, toggle flag to true
+        if (e.target === window.slider) {
+            window.isDragging = true;
+        }
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        // Don't do anything if dragging flag is false
+        if (!window.isDragging) {
+            return false;
+        }
+
+        if (document.documentElement.getAttribute('panelorientation') == 'vertical') {
+            // Get x-coordinate of pointer relative to container
+            var pointerRelativeXpos = e.clientX;
+    
+            // Resize waveDraw
+            window.waveDraw.style.width = (pointerRelativeXpos - 8) + 'px';
+            window.waveDraw.style.flexGrow = 0;
+            // Resize aceDiv
+            window.aceDiv.style.width = window.containerDiv.getBoundingClientRect().width - (pointerRelativeXpos - 8) + 'px';
+            window.aceDiv.style.flexGrow = 0;
+            // ...and slider
+            window.slider.style.left = (pointerRelativeXpos - 8) + 'px';
+        }
+        else {
+            // Get offset
+            var containerOffsetTop = window.containerDiv.offsetTop;
+    
+            // Get y-coordinate of pointer relative to container
+            var pointerRelativeYpos = e.clientY - containerOffsetTop;
+    
+            // Resize waveDraw
+            window.waveDraw.style.height = (pointerRelativeYpos - containerOffsetTop) + 'px';
+            window.waveDraw.style.flexGrow = 0;
+            var bodyHeight = document.body.getBoundingClientRect().height;
+            var containerHeight = window.containerDiv.getBoundingClientRect().height;
+            // Resize aceDiv
+            window.aceDiv.style.height = containerHeight - (pointerRelativeYpos) + 'px';
+            window.aceDiv.style.flexGrow = 0;
+            // ...and slider
+            window.slider.style.top = (bodyHeight - (containerHeight - (pointerRelativeYpos)) - 25) + 'px';
+        }
+    });
+
+    document.addEventListener('mouseup', function(e) {
+        if (window.isDragging) {
+            editor.resize();
+            // Turn off dragging flag when user mouse is up
+            window.isDragging = false;
+        }
+    });
+
+    // like this sort of development and want to contribute?  Talk to your TA!
+    window.bongocat1 = 
+    "\n      ⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣷⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" +
+    "\n  ⠀⠀⠀⠀⠀⠀⠀⣀⣶⣿⣿⣿⣿⣿⣿⣷⣶⣶⣶⣦⣀⡀⠀⢀⣴⣇⠀⠀⠀⠀" +
+    "\n  ⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀" +
+    "\n  ⠀⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀" +
+    "\n  ⠀⠀⠀⣴⣿⣿⣿⣿⠛⣿⣿⣿⣿⣿⣿⣿⣿⡿⣿⣿⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀" +
+    "\n  ⠀⠀⣾⣿⣿⣿⣿⣿⣶⣿⣯⣭⣬⣉⣽⣿⣿⣄⣼⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀⠀" +
+    "\n  ⠀⣸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡄" +
+    "\n  ⢸⣿⣿⣿⣿⠟⠋⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠁⣿⣿⣿⣿⡿⠛⠉⠉⠉⠉⠁" +
+    "\n  ⠘⠛⠛⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠛⠛⠃⠀⠀⠀⠀⠀⠀⠀";
+    window.bongocat2 = 
+    "\n                                      " +
+    "\n  ⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣶⣄⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀" +
+    "\n  ⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣦⣄⣀⡀⣠⣾⡇⠀⠀⠀⠀" +
+    "\n  ⠀⠀⠀⠀⠀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇⠀⠀⠀⠀" +
+    "\n  ⠀⠀⠀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠿⢿⣿⣿⡇⠀⠀⠀⠀" +
+    "\n  ⣶⣿⣦⣜⣿⣿⣿⡟⠻⣿⣿⣿⣿⣿⣿⣿⡿⢿⡏⣴⣺⣦⣙⣿⣷⣄⠀⠀⠀" +
+    "\n  ⣯⡇⣻⣿⣿⣿⣿⣷⣾⣿⣬⣥⣭⣽⣿⣿⣧⣼⡇⣯⣇⣹⣿⣿⣿⣿⣧⠀⠀" +
+    "\n  ⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠸⣿⣿⣿⣿⣿⣿⣿⣷⠀" +
+    "\n                                      ";
+    function bongoCatRun() {
+        if (window.activeBongoCat == 'cat1') {
+            window.errorLogText.value = `No logs have been produced.\n\n\n\n\n${window.bongocat2}`;
+            window.activeBongoCat = 'cat2';
+        }
+        else {
+            window.errorLogText.value = `No logs have been produced.\n\n\n\n\n${window.bongocat1}`;
+            window.activeBongoCat = 'cat1';
+        }
+    }
+    window.onload = () => {
+        window.observer = new MutationObserver((arr, obs) => {
+            arr.forEach(i => {
+                if (i.target.classList.contains('overlay-visible')) {
+                    i.target.querySelector('textarea').value += `\n\n\n\n\n${bongocat1}`;
+                    window.activeBongoCat = 'cat1';
+                    window.errorLogText = document.querySelector('#errorlog textarea');
+                    window.bongoCatIntval = setInterval(bongoCatRun, 100);
+                }
+                else {
+                    clearInterval(window.bongoCatIntval);
+                    delete window.bongoCatIntval;
+                    delete window.activeBongoCat;
+                }
+            })
+        })
+        window.observer.observe(document.querySelector('.overlay'), { attributes: true });
+    }
+</script>
 </html>

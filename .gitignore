@@ -1,5 +1,7 @@
 hdl2wave.code-workspace
 package-lock.json
 node_modules/
+submissions/
 .vscode/
 obj_dir/
+**/ace/*
